@@ -13,6 +13,7 @@
 注意：
 
 - 这是 schema 草案，不是已验证可迁移的最终文件。
+- 当前工程实现固定 Prisma 6.x；Prisma 7 已调整 datasource URL 配置方式，升级前需要单独评估 `prisma.config.ts` 和客户端初始化方式。
 - PostgreSQL RLS、部分唯一索引、`inet` 类型、数组默认值等能力可能需要手写 SQL migration 补充。
 - 生产实现前必须运行 `prisma validate`、`prisma migrate dev` 和租户隔离测试。
 
