@@ -3,6 +3,7 @@ import { AccountModule } from './core/account';
 import { AuthModule } from './core/auth';
 import { PermissionModule } from './core/permission';
 import { TenantModule } from './core/tenant';
+import { AttendanceModule } from './modules/attendance';
 import { AttendanceGroupModule } from './modules/attendance-group';
 import { EmployeeModule } from './modules/employee';
 import { OrganizationModule } from './modules/organization';
@@ -19,6 +20,7 @@ import { AppController } from './app.controller';
     EmployeeModule,
     ShiftModule,
     AttendanceGroupModule,
+    AttendanceModule,
   ],
   controllers: [AppController],
 })
