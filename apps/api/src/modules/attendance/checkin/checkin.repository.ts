@@ -17,6 +17,7 @@ export type CheckinRecord = {
   photoUrl: string | null;
   deviceId: string | null;
   idempotencyKey: string | null;
+  sourceRequestId: string | null;
   isValid: boolean;
   invalidReason: string | null;
   rawData: unknown;
@@ -40,6 +41,7 @@ export type CreateCheckinInput = {
   photoUrl: string | null;
   deviceId: string | null;
   idempotencyKey: string;
+  sourceRequestId: string | null;
   isValid: boolean;
   invalidReason: string | null;
   rawData: unknown;
@@ -108,6 +110,7 @@ export class PrismaCheckinRepository
         photoUrl: input.photoUrl,
         deviceId: input.deviceId,
         idempotencyKey: input.idempotencyKey,
+        sourceRequestId: input.sourceRequestId,
         isValid: input.isValid,
         invalidReason: input.invalidReason,
         rawData: input.rawData as Prisma.InputJsonValue,
@@ -158,6 +161,7 @@ type PrismaCheckinRecord = {
   photoUrl: string | null;
   deviceId: string | null;
   idempotencyKey: string | null;
+  sourceRequestId: string | null;
   isValid: boolean;
   invalidReason: string | null;
   rawData: unknown;
