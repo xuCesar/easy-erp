@@ -41,6 +41,20 @@ enum AccountStatus {
   DISABLED
 }
 
+enum RoleName {
+  TENANT_ADMIN
+  HR_ADMIN
+  ORG_MANAGER
+  EMPLOYEE
+}
+
+enum DataScopeType {
+  TENANT
+  FACTORY
+  ORG_UNIT
+  EMPLOYEE
+}
+
 enum EmployeeStatus {
   ACTIVE
   INACTIVE
@@ -184,10 +198,61 @@ model AccountUser {
 
   createdAttendanceGroupMembers AttendanceGroupMember[]
   auditLogs AuditLog[]
+  roles     AccountRole[]
+  dataScopes AccountDataScope[]
+  refreshTokens AccountRefreshToken[]
 
   @@unique([tenantId, phone])
   @@index([tenantId, employeeId])
   @@map("account_user")
+}
+
+model AccountRole {
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  accountUserId String   @map("account_user_id") @db.Uuid
+  roleName      RoleName @map("role_name")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  accountUser AccountUser @relation(fields: [accountUserId], references: [id])
+
+  @@unique([tenantId, accountUserId, roleName])
+  @@index([tenantId, roleName])
+  @@map("account_role")
+}
+
+model AccountDataScope {
+  id            String        @id @default(uuid()) @db.Uuid
+  tenantId      String        @map("tenant_id") @db.Uuid
+  accountUserId String        @map("account_user_id") @db.Uuid
+  scopeType     DataScopeType @map("scope_type")
+  factoryId     String?       @map("factory_id") @db.Uuid
+  orgUnitId     String?       @map("org_unit_id") @db.Uuid
+  employeeId    String?       @map("employee_id") @db.Uuid
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  accountUser AccountUser @relation(fields: [accountUserId], references: [id])
+
+  @@index([tenantId, accountUserId, scopeType])
+  @@index([tenantId, factoryId])
+  @@index([tenantId, orgUnitId])
+  @@index([tenantId, employeeId])
+  @@map("account_data_scope")
+}
+
+model AccountRefreshToken {
+  id            String    @id @db.Uuid
+  tenantId      String    @map("tenant_id") @db.Uuid
+  accountUserId String    @map("account_user_id") @db.Uuid
+  expiresAt     DateTime  @map("expires_at") @db.Timestamptz(6)
+  revokedAt     DateTime? @map("revoked_at") @db.Timestamptz(6)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  accountUser AccountUser @relation(fields: [accountUserId], references: [id])
+
+  @@index([tenantId, accountUserId, revokedAt])
+  @@index([expiresAt])
+  @@map("account_refresh_token")
 }
 
 model Employee {
