@@ -2,7 +2,7 @@
 
 面向中小型制造工厂的轻量企业管理系统。当前阶段以考勤模块为切入点，目标是先交付单工厂考勤闭环，再逐步扩展到排班、多工厂、工资、计件、门禁和硬件集成。
 
-当前仓库状态：文档设计阶段，尚未初始化应用工程。
+当前仓库状态：已初始化 pnpm workspace，并完成 API 基础工程、Prisma schema、租户上下文与 RLS POC。后续按 GitHub issue 和 `docs/plan/factory-erp-mvp-implementation-plan.md` 逐项推进。
 
 ---
 
@@ -105,14 +105,14 @@ docs/
 
 ## 6. 下一步建议
 
-推荐按以下顺序推进：
+当前 Task 1-3 已完成，后续推荐按 GitHub issue 和实施计划继续推进：
 
-1. 初始化 git 仓库、`.gitignore`、`package.json`、`pnpm-workspace.yaml`。
-2. 初始化 `apps/api`，接入 NestJS、Prisma、PostgreSQL、Redis。
-3. 根据 [Prisma Schema Draft](docs/design/prisma-schema-draft.md) 创建首版 `schema.prisma`。
-4. 做租户上下文与 RLS POC。
-5. 实现账号、权限、组织、员工基础模块。
-6. 实现班次、考勤组、打卡和考勤计算。
+1. Task 4：实现 Auth、Account、Permission foundation。
+2. Task 5：实现组织与员工基础模块。
+3. Task 6：实现班次与考勤组模块。
+4. Task 7：实现打卡与考勤计算。
+5. Task 8：实现请假与补卡审批。
+6. Task 9-11：完成报表、月度锁定、最小端侧流程和 MVP 验收。
 
 ---
 
