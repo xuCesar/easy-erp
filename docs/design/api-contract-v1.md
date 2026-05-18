@@ -152,6 +152,34 @@
 }
 ```
 
+### `PATCH /api/v1/org-units/:id`
+
+请求：
+
+```json
+{
+  "parentId": null,
+  "name": "生产二组",
+  "type": "GROUP",
+  "sortOrder": 20,
+  "status": "ACTIVE"
+}
+```
+
+说明：
+
+- `parentId` 可以为 `null`，表示调整为工厂直属组织。
+- 不允许跨租户或跨工厂挂载父组织。
+
+### `DELETE /api/v1/org-units/:id`
+
+软删除组织单元。
+
+删除前必须确认：
+
+- 不存在有效子组织。
+- 不存在有效员工。
+
 ### `GET /api/v1/employees`
 
 查询参数：
@@ -180,6 +208,29 @@
   "status": "ACTIVE"
 }
 ```
+
+### `PATCH /api/v1/employees/:id`
+
+请求：
+
+```json
+{
+  "orgUnitId": null,
+  "name": "张三",
+  "phone": "13800000000",
+  "status": "ACTIVE"
+}
+```
+
+说明：
+
+- `orgUnitId` 可以为 `null`，表示员工直接归属工厂。
+- 更新 `orgUnitId` 时必须属于同一租户与同一工厂。
+- 更新 `empNo` 时必须保持租户内唯一。
+
+### `DELETE /api/v1/employees/:id`
+
+软删除员工档案，后续涉及考勤、审批和报表时需保留历史数据引用。
 
 ---
 
