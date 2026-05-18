@@ -1,6 +1,9 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ApprovalStatus } from '@prisma/client';
 import { describe, expect, it } from 'vitest';
+import type { AuthPrincipal } from '../../core/auth';
+import { PermissionService } from '../../core/permission';
+import type { EmployeeRecord, EmployeeRepository } from '../employee';
 import { RepairService } from './repair.service';
 import type {
   CreateRepairRequestInput,
@@ -13,7 +16,7 @@ import type {
 describe('RepairService', () => {
   it('creates repair request as pending', async () => {
     const repository = new FakeRepairRequestRepository();
-    const service = new RepairService(repository, new FakeRecalculationPort());
+    const service = createService(repository);
 
     const request = await service.create({
       tenantId: 'tenant-1',
@@ -38,9 +41,9 @@ describe('RepairService', () => {
       repairRequest({ status: ApprovalStatus.PENDING }),
     ]);
     const recalculation = new FakeRecalculationPort();
-    const service = new RepairService(repository, recalculation);
+    const service = createService(repository, recalculation);
 
-    const approved = await service.approve('tenant-1', 'repair-1', 'approver-1');
+    const approved = await service.approve(principal(), 'repair-1');
 
     expect(approved.request).toMatchObject({
       status: ApprovalStatus.APPROVED,
@@ -67,29 +70,57 @@ describe('RepairService', () => {
   });
 
   it('rejects invalid repair approval transition', async () => {
-    const service = new RepairService(
+    const service = createService(
       new FakeRepairRequestRepository([
         repairRequest({ status: ApprovalStatus.APPROVED }),
       ]),
-      new FakeRecalculationPort(),
     );
 
     await expect(
-      service.approve('tenant-1', 'repair-1', 'approver-1'),
+      service.approve(principal(), 'repair-1'),
     ).rejects.toBeInstanceOf(ConflictException);
   });
 
   it('rejects missing repair request', async () => {
-    const service = new RepairService(
-      new FakeRepairRequestRepository(),
-      new FakeRecalculationPort(),
-    );
+    const service = createService(new FakeRepairRequestRepository());
 
     await expect(
-      service.approve('tenant-1', 'missing', 'approver-1'),
+      service.approve(principal(), 'missing'),
     ).rejects.toBeInstanceOf(NotFoundException);
   });
+
+  it('rejects repair approval outside approver data scope', async () => {
+    const repository = new FakeRepairRequestRepository([
+      repairRequest({ status: ApprovalStatus.PENDING }),
+    ]);
+    const recalculation = new FakeRecalculationPort();
+    const service = createService(repository, recalculation);
+
+    await expect(
+      service.approve(
+        {
+          ...principal(),
+          dataScopes: [{ type: 'EMPLOYEE', employeeId: 'other-employee' }],
+        },
+        'repair-1',
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(repository.manualCheckins).toEqual([]);
+    expect(recalculation.calls).toEqual([]);
+  });
 });
+
+function createService(
+  repository: RepairRequestRepository,
+  recalculation = new FakeRecalculationPort(),
+): RepairService {
+  return new RepairService(
+    repository,
+    recalculation,
+    new PermissionService(),
+    new FakeEmployeeRepository(),
+  );
+}
 
 class FakeRepairRequestRepository implements RepairRequestRepository {
   readonly manualCheckins: ManualCheckinInput[] = [];
@@ -191,6 +222,42 @@ class FakeRecalculationPort {
       leaves: input.leaves ?? [],
     });
   }
+}
+
+class FakeEmployeeRepository implements Pick<EmployeeRepository, 'findById'> {
+  async findById(
+    tenantId: string,
+    id: string,
+  ): Promise<EmployeeRecord | null> {
+    if (tenantId !== 'tenant-1' || id !== 'employee-1') {
+      return null;
+    }
+
+    return {
+      id: 'employee-1',
+      tenantId: 'tenant-1',
+      factoryId: 'factory-1',
+      orgUnitId: 'org-1',
+      empNo: 'E001',
+      name: '张三',
+      phone: '13800000000',
+      entryDate: dateTime('2026-05-01T00:00:00.000Z'),
+      status: 'ACTIVE',
+      createdAt: dateTime('2026-05-01T00:00:00.000Z'),
+      updatedAt: dateTime('2026-05-01T00:00:00.000Z'),
+      deletedAt: null,
+    };
+  }
+}
+
+function principal(): AuthPrincipal {
+  return {
+    id: 'approver-1',
+    tenantId: 'tenant-1',
+    employeeId: 'approver-employee-1',
+    roles: ['ORG_MANAGER'],
+    dataScopes: [{ type: 'EMPLOYEE', employeeId: 'employee-1' }],
+  };
 }
 
 function repairRequest(

@@ -53,7 +53,7 @@ export class LeaveController {
     @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
   ): Promise<unknown> {
-    return ok(await this.leaveService.approve(req.user.tenantId, id, req.user.id));
+    return ok(await this.leaveService.approve(req.user, id));
   }
 
   @Post(':id/reject')
@@ -67,9 +67,7 @@ export class LeaveController {
       throw new BadRequestException('rejectReason is required.');
     }
 
-    return ok(
-      await this.leaveService.reject(req.user.tenantId, id, body.rejectReason),
-    );
+    return ok(await this.leaveService.reject(req.user, id, body.rejectReason));
   }
 }
 

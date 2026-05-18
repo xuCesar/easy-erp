@@ -1,6 +1,9 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ApprovalStatus } from '@prisma/client';
 import { describe, expect, it } from 'vitest';
+import { PermissionService } from '../../core/permission';
+import type { AuthPrincipal } from '../../core/auth';
+import type { EmployeeRecord, EmployeeRepository } from '../employee';
 import { LeaveService } from './leave.service';
 import type {
   CreateLeaveRequestInput,
@@ -11,7 +14,7 @@ import type {
 describe('LeaveService', () => {
   it('creates leave request as pending', async () => {
     const repository = new FakeLeaveRequestRepository();
-    const service = new LeaveService(repository, new FakeRecalculationPort());
+    const service = createService(repository);
 
     const request = await service.create({
       tenantId: 'tenant-1',
@@ -37,9 +40,9 @@ describe('LeaveService', () => {
       leaveRequest({ status: ApprovalStatus.PENDING }),
     ]);
     const recalculation = new FakeRecalculationPort();
-    const service = new LeaveService(repository, recalculation);
+    const service = createService(repository, recalculation);
 
-    const approved = await service.approve('tenant-1', 'leave-1', 'approver-1');
+    const approved = await service.approve(principal(), 'leave-1');
 
     expect(approved).toMatchObject({
       status: ApprovalStatus.APPROVED,
@@ -61,29 +64,56 @@ describe('LeaveService', () => {
   });
 
   it('rejects invalid leave approval transition', async () => {
-    const service = new LeaveService(
+    const service = createService(
       new FakeLeaveRequestRepository([
         leaveRequest({ status: ApprovalStatus.APPROVED }),
       ]),
-      new FakeRecalculationPort(),
     );
 
     await expect(
-      service.approve('tenant-1', 'leave-1', 'approver-1'),
+      service.approve(principal(), 'leave-1'),
     ).rejects.toBeInstanceOf(ConflictException);
   });
 
   it('rejects missing leave request', async () => {
-    const service = new LeaveService(
-      new FakeLeaveRequestRepository(),
-      new FakeRecalculationPort(),
-    );
+    const service = createService(new FakeLeaveRequestRepository());
 
     await expect(
-      service.approve('tenant-1', 'missing', 'approver-1'),
+      service.approve(principal(), 'missing'),
     ).rejects.toBeInstanceOf(NotFoundException);
   });
+
+  it('rejects leave approval outside approver data scope', async () => {
+    const repository = new FakeLeaveRequestRepository([
+      leaveRequest({ status: ApprovalStatus.PENDING }),
+    ]);
+    const recalculation = new FakeRecalculationPort();
+    const service = createService(repository, recalculation);
+
+    await expect(
+      service.approve(
+        {
+          ...principal(),
+          dataScopes: [{ type: 'EMPLOYEE', employeeId: 'other-employee' }],
+        },
+        'leave-1',
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(recalculation.calls).toEqual([]);
+  });
 });
+
+function createService(
+  repository: LeaveRequestRepository,
+  recalculation = new FakeRecalculationPort(),
+): LeaveService {
+  return new LeaveService(
+    repository,
+    recalculation,
+    new PermissionService(),
+    new FakeEmployeeRepository(),
+  );
+}
 
 class FakeLeaveRequestRepository implements LeaveRequestRepository {
   private readonly records = new Map<string, LeaveRequestRecord>();
@@ -157,6 +187,42 @@ class FakeRecalculationPort {
       leaves: input.leaves ?? [],
     });
   }
+}
+
+class FakeEmployeeRepository implements Pick<EmployeeRepository, 'findById'> {
+  async findById(
+    tenantId: string,
+    id: string,
+  ): Promise<EmployeeRecord | null> {
+    if (tenantId !== 'tenant-1' || id !== 'employee-1') {
+      return null;
+    }
+
+    return {
+      id: 'employee-1',
+      tenantId: 'tenant-1',
+      factoryId: 'factory-1',
+      orgUnitId: 'org-1',
+      empNo: 'E001',
+      name: '张三',
+      phone: '13800000000',
+      entryDate: dateTime('2026-05-01T00:00:00.000Z'),
+      status: 'ACTIVE',
+      createdAt: dateTime('2026-05-01T00:00:00.000Z'),
+      updatedAt: dateTime('2026-05-01T00:00:00.000Z'),
+      deletedAt: null,
+    };
+  }
+}
+
+function principal(): AuthPrincipal {
+  return {
+    id: 'approver-1',
+    tenantId: 'tenant-1',
+    employeeId: 'approver-employee-1',
+    roles: ['ORG_MANAGER'],
+    dataScopes: [{ type: 'EMPLOYEE', employeeId: 'employee-1' }],
+  };
 }
 
 function leaveRequest(

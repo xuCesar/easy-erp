@@ -1,6 +1,14 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ApprovalStatus, CheckinMethod } from '@prisma/client';
+import type { AuthPrincipal } from '../../core/auth';
+import { PermissionService } from '../../core/permission';
 import type { AttendanceRecalculationPort } from '../attendance';
+import type { EmployeeRepository } from '../employee';
 import type {
   CreateRepairRequestInput,
   RepairApprovalResult,
@@ -13,6 +21,8 @@ export class RepairService {
   constructor(
     private readonly repository: RepairRequestRepository,
     private readonly recalculation: AttendanceRecalculationPort,
+    private readonly permissionService: PermissionService,
+    private readonly employeeRepository: Pick<EmployeeRepository, 'findById'>,
   ) {}
 
   async create(input: CreateRepairRequestInput): Promise<RepairRequestRecord> {
@@ -20,18 +30,18 @@ export class RepairService {
   }
 
   async approve(
-    tenantId: string,
+    principal: AuthPrincipal,
     id: string,
-    approverId: string,
   ): Promise<RepairApprovalResult> {
-    const request = await this.findRequest(tenantId, id);
+    const request = await this.findRequest(principal.tenantId, id);
     assertTransition(request.status, ApprovalStatus.APPROVED);
+    await this.assertCanAccessRequest(principal, request);
 
     const approvedAt = new Date();
     const result = await this.repository.approveWithManualCheckin({
-      tenantId,
+      tenantId: principal.tenantId,
       id,
-      approverId,
+      approverId: principal.id,
       approvedAt,
       manualCheckin: {
         tenantId: request.tenantId,
@@ -55,14 +65,15 @@ export class RepairService {
   }
 
   async reject(
-    tenantId: string,
+    principal: AuthPrincipal,
     id: string,
     rejectReason: string,
   ): Promise<RepairRequestRecord> {
-    const request = await this.findRequest(tenantId, id);
+    const request = await this.findRequest(principal.tenantId, id);
     assertTransition(request.status, ApprovalStatus.REJECTED);
+    await this.assertCanAccessRequest(principal, request);
 
-    return this.repository.updateStatus(tenantId, id, {
+    return this.repository.updateStatus(principal.tenantId, id, {
       status: ApprovalStatus.REJECTED,
       rejectReason,
     });
@@ -104,6 +115,27 @@ export class RepairService {
     }
 
     return request;
+  }
+
+  private async assertCanAccessRequest(
+    principal: AuthPrincipal,
+    request: RepairRequestRecord,
+  ): Promise<void> {
+    const employee = await this.employeeRepository.findById(
+      request.tenantId,
+      request.employeeId,
+    );
+
+    if (
+      !this.permissionService.canAccessResource(principal, {
+        tenantId: request.tenantId,
+        factoryId: request.factoryId,
+        employeeId: request.employeeId,
+        orgUnitId: employee?.orgUnitId ?? null,
+      })
+    ) {
+      throw new ForbiddenException('Permission denied for target employee.');
+    }
   }
 }
 

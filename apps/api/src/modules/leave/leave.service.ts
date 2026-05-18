@@ -1,6 +1,14 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ApprovalStatus } from '@prisma/client';
+import type { AuthPrincipal } from '../../core/auth';
+import { PermissionService } from '../../core/permission';
 import type { AttendanceRecalculationPort } from '../attendance';
+import type { EmployeeRepository } from '../employee';
 import type {
   CreateLeaveRequestInput,
   LeaveRequestRecord,
@@ -12,6 +20,8 @@ export class LeaveService {
   constructor(
     private readonly repository: LeaveRequestRepository,
     private readonly recalculation: AttendanceRecalculationPort,
+    private readonly permissionService: PermissionService,
+    private readonly employeeRepository: Pick<EmployeeRepository, 'findById'>,
   ) {}
 
   async create(input: CreateLeaveRequestInput): Promise<LeaveRequestRecord> {
@@ -19,16 +29,16 @@ export class LeaveService {
   }
 
   async approve(
-    tenantId: string,
+    principal: AuthPrincipal,
     id: string,
-    approverId: string,
   ): Promise<LeaveRequestRecord> {
-    const request = await this.findRequest(tenantId, id);
+    const request = await this.findRequest(principal.tenantId, id);
     assertTransition(request.status, ApprovalStatus.APPROVED);
+    await this.assertCanAccessRequest(principal, request);
 
-    const approved = await this.repository.updateStatus(tenantId, id, {
+    const approved = await this.repository.updateStatus(principal.tenantId, id, {
       status: ApprovalStatus.APPROVED,
-      approverId,
+      approverId: principal.id,
       approvedAt: new Date(),
       rejectReason: null,
       cancelReason: null,
@@ -40,14 +50,15 @@ export class LeaveService {
   }
 
   async reject(
-    tenantId: string,
+    principal: AuthPrincipal,
     id: string,
     rejectReason: string,
   ): Promise<LeaveRequestRecord> {
-    const request = await this.findRequest(tenantId, id);
+    const request = await this.findRequest(principal.tenantId, id);
     assertTransition(request.status, ApprovalStatus.REJECTED);
+    await this.assertCanAccessRequest(principal, request);
 
-    return this.repository.updateStatus(tenantId, id, {
+    return this.repository.updateStatus(principal.tenantId, id, {
       status: ApprovalStatus.REJECTED,
       rejectReason,
     });
@@ -90,6 +101,27 @@ export class LeaveService {
     }
 
     return request;
+  }
+
+  private async assertCanAccessRequest(
+    principal: AuthPrincipal,
+    request: LeaveRequestRecord,
+  ): Promise<void> {
+    const employee = await this.employeeRepository.findById(
+      request.tenantId,
+      request.employeeId,
+    );
+
+    if (
+      !this.permissionService.canAccessResource(principal, {
+        tenantId: request.tenantId,
+        factoryId: request.factoryId,
+        employeeId: request.employeeId,
+        orgUnitId: employee?.orgUnitId ?? null,
+      })
+    ) {
+      throw new ForbiddenException('Permission denied for target employee.');
+    }
   }
 
   private async recalculateAffectedDates(

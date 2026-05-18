@@ -52,7 +52,7 @@ export class RepairController {
     @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
   ): Promise<unknown> {
-    return ok(await this.repairService.approve(req.user.tenantId, id, req.user.id));
+    return ok(await this.repairService.approve(req.user, id));
   }
 
   @Post(':id/reject')
@@ -66,9 +66,7 @@ export class RepairController {
       throw new BadRequestException('rejectReason is required.');
     }
 
-    return ok(
-      await this.repairService.reject(req.user.tenantId, id, body.rejectReason),
-    );
+    return ok(await this.repairService.reject(req.user, id, body.rejectReason));
   }
 }
 
