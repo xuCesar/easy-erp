@@ -143,6 +143,7 @@ export class CheckinService {
       photoUrl: request.photoUrl,
       deviceId: request.deviceId,
       idempotencyKey: request.idempotencyKey,
+      sourceRequestId: null,
       isValid: validation.isValid,
       invalidReason: validation.invalidReason,
       rawData: request,

@@ -16,6 +16,7 @@ import { CheckinController } from './checkin/checkin.controller';
 import { PrismaCheckinRepository } from './checkin/checkin.repository';
 import { CheckinService } from './checkin/checkin.service';
 import {
+  AttendanceRecalculationService,
   AttendanceResultService,
   PrismaAttendanceResultRepository,
 } from './result';
@@ -72,10 +73,35 @@ export const attendanceResultRepositoryToken = Symbol(
         new AttendanceResultService(repository),
       inject: [attendanceResultRepositoryToken],
     },
+    {
+      provide: AttendanceRecalculationService,
+      useFactory: (
+        attendanceResultService: AttendanceResultService,
+        checkinRepository: PrismaCheckinRepository,
+        attendanceGroupRepository: AttendanceGroupRepository,
+        shiftRepository: ShiftRepository,
+        employeeRepository: EmployeeRepository,
+      ) =>
+        new AttendanceRecalculationService(
+          attendanceResultService,
+          checkinRepository,
+          attendanceGroupRepository,
+          shiftRepository,
+          employeeRepository,
+        ),
+      inject: [
+        AttendanceResultService,
+        checkinRepositoryToken,
+        attendanceGroupRepositoryToken,
+        shiftRepositoryToken,
+        employeeRepositoryToken,
+      ],
+    },
   ],
   exports: [
     CheckinService,
     AttendanceResultService,
+    AttendanceRecalculationService,
     checkinRepositoryToken,
     attendanceResultRepositoryToken,
   ],
