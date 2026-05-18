@@ -6,6 +6,7 @@ const DEFAULT_PORT = 3000;
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
+  app.setGlobalPrefix('api/v1');
   const port = Number(process.env.PORT ?? DEFAULT_PORT);
 
   await app.listen(port);
