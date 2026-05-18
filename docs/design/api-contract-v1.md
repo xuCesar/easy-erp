@@ -236,6 +236,16 @@
 
 ## 6. 班次与考勤组
 
+### `GET /api/v1/shifts`
+
+查询工厂下班次。
+
+查询参数：
+
+| 参数 | 说明 |
+| --- | --- |
+| `factoryId` | 工厂 ID |
+
 ### `POST /api/v1/shifts`
 
 请求：
@@ -257,6 +267,29 @@
 }
 ```
 
+### `PATCH /api/v1/shifts/:id`
+
+请求字段同创建接口，所有字段均可按需传入。
+
+说明：
+
+- `crossDay = false` 时，`endTime` 必须晚于 `startTime`。
+- `crossDay = true` 时，`endTime` 应早于 `startTime`。
+
+### `DELETE /api/v1/shifts/:id`
+
+软删除班次规则。后续如存在考勤组引用该班次，应先迁移考勤组规则。
+
+### `GET /api/v1/attendance-groups`
+
+查询工厂下考勤组。
+
+查询参数：
+
+| 参数 | 说明 |
+| --- | --- |
+| `factoryId` | 工厂 ID |
+
 ### `POST /api/v1/attendance-groups`
 
 请求：
@@ -277,6 +310,20 @@
 }
 ```
 
+### `PATCH /api/v1/attendance-groups/:id`
+
+请求字段同创建接口，所有字段均可按需传入。
+
+说明：
+
+- 更新 `shiftId` 时，班次必须属于同一租户与同一工厂。
+- 启用 GPS 打卡时必须提供经纬度与半径。
+- 启用 Wi-Fi 打卡时必须提供 SSID 与 BSSID。
+
+### `DELETE /api/v1/attendance-groups/:id`
+
+软删除考勤组规则。历史成员归属和已生成考勤结果不应被物理删除。
+
 ### `POST /api/v1/attendance-groups/:id/members`
 
 请求：
@@ -287,6 +334,11 @@
   "effectiveFrom": "2026-05-17"
 }
 ```
+
+说明：
+
+- 新增成员归属时，会关闭员工上一条有效考勤组归属。
+- 同一员工同一日期最多只能有一个有效考勤组。
 
 ---
 
