@@ -7,7 +7,7 @@
 - Node.js、pnpm、Docker 和 Docker Compose 已安装。
 - 已执行 `pnpm install --frozen-lockfile`。
 - `apps/api/.env` 从 `apps/api/.env.example` 复制并按环境调整。
-- `JWT_ACCESS_SECRET`、`JWT_REFRESH_SECRET`、数据库密码和 demo 管理员密码由部署环境注入，不提交真实值。
+- `JWT_ACCESS_SECRET`、`JWT_REFRESH_SECRET`、数据库密码和 demo 账号密码由部署环境注入，不提交真实值。
 
 本地试点默认连接串：
 
@@ -51,6 +51,8 @@ DATABASE_URL="postgresql://easyerp:easyerp@localhost:5432/easyerp?schema=public"
 DATABASE_URL="postgresql://easyerp:easyerp@localhost:5432/easyerp?schema=public" \
 DEMO_ADMIN_PHONE="13800000000" \
 DEMO_ADMIN_PASSWORD="change-me-before-demo" \
+DEMO_EMPLOYEE_PHONE="13900000001" \
+DEMO_EMPLOYEE_PASSWORD="change-me-before-demo" \
   pnpm --filter @easy-erp/api seed:demo
 ```
 
@@ -60,6 +62,7 @@ DEMO_ADMIN_PASSWORD="change-me-before-demo" \
 - 工厂：`杭州一厂`
 - 组织单元：`生产一组`
 - 管理员账号：默认手机号 `13800000000`
+- 员工账号：默认手机号 `13900000001`
 - 班次：`白班 08:00-17:00`
 - 考勤组：`生产一组考勤`
 - 员工样例：`试点管理员`、`张三`
@@ -153,7 +156,7 @@ pnpm --filter @easy-erp/api exec prisma migrate status --schema prisma/schema.pr
 
 ### 登录失败
 
-确认已执行 `seed:demo`，并且 `DEMO_ADMIN_PHONE`、`DEMO_ADMIN_PASSWORD` 与登录请求一致。重复执行 seed 会重置 demo 管理员密码为当前环境变量值。
+确认已执行 `seed:demo`，并且 `DEMO_ADMIN_PHONE`、`DEMO_ADMIN_PASSWORD`、`DEMO_EMPLOYEE_PHONE`、`DEMO_EMPLOYEE_PASSWORD` 与登录请求一致。重复执行 seed 会重置 demo 账号密码为当前环境变量值。
 
 ### 月报无数据
 

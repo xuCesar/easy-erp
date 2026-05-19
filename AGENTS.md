@@ -74,8 +74,8 @@
 ```txt
 apps/
 ├── api/       # NestJS API
-├── admin/     # React 管理后台，当前为 TypeScript-only MVP 页面流
-└── miniapp/   # Taro 小程序，当前为 TypeScript-only MVP 页面流
+├── admin/     # Vite + React 管理后台
+└── miniapp/   # Taro + React 小程序
 
 packages/
 └── shared-types/
@@ -305,8 +305,15 @@ DATABASE_URL="postgresql://easyerp:easyerp@localhost:5432/easyerp?schema=public"
 - Task 9：Reports and Monthly Locking，已完成。
 - Task 10：Minimal Admin and Miniapp Flows，已完成。
 - Task 11：Phase 1 MVP readiness verification，已完成。
-- Task 12：文档与 issue 基线更新，当前阶段。
-- Task 13-18：Phase 1.5 生产化试点任务，详见 `docs/plan/phase-1-5-production-pilot-plan.md`。
+- Task 12：文档与 issue 基线更新，已完成。
+- Task 13：CI 基线，已完成。
+- Task 14：管理后台真实化，已完成。
+- Task 15：小程序真实化，已完成。
+- Task 16：导出任务生产化，已完成。
+- Task 17：试点部署与初始化，已完成。
+- Task 18：端到端冒烟验收，已完成。
+
+Phase 1.5 生产化试点已完成，详见 `docs/plan/phase-1-5-production-pilot-plan.md`。开始 Phase 2 或新一轮试点增强前，应先基于试点反馈创建新的 GitHub issue。
 
 开始新任务前：
 
