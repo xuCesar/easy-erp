@@ -1,5 +1,6 @@
-import { ConflictException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { describe, expect, it } from 'vitest';
+import { ReportExportJob } from '../../jobs/report-export.job';
 import {
   AttendanceResultService,
   type AttendanceResultRecord,
@@ -58,9 +59,59 @@ describe('ReportService', () => {
 
     expect(created.taskId).toBe('task-1');
     expect(task).toMatchObject({
-      id: 'task-1',
+      taskId: 'task-1',
       status: 'PENDING',
       downloadUrl: null,
+    });
+  });
+
+  it('keeps export tasks isolated by tenant', async () => {
+    const service = new ReportService(new FakeReportRepository());
+    const created = await service.createMonthlyExportTask({
+      tenantId: 'tenant-1',
+      factoryId: 'factory-1',
+      orgUnitId: null,
+      month: '2026-05',
+      requestedBy: 'user-1',
+    });
+
+    await expect(
+      service.getExportTask('tenant-2', created.taskId),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('returns explicit not found error for missing export task', async () => {
+    const service = new ReportService(new FakeReportRepository());
+
+    await expect(
+      service.getExportTask('tenant-1', 'missing-task'),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('updates export task completion and failure through job port', async () => {
+    const repository = new FakeReportRepository();
+    const service = new ReportService(repository);
+    const job = new ReportExportJob(repository);
+    const created = await service.createMonthlyExportTask({
+      tenantId: 'tenant-1',
+      factoryId: 'factory-1',
+      orgUnitId: null,
+      month: '2026-05',
+      requestedBy: 'user-1',
+    });
+
+    await job.completeTask('tenant-1', created.taskId, 'https://example.test/report.xlsx');
+    await expect(service.getExportTask('tenant-1', created.taskId)).resolves.toMatchObject({
+      taskId: created.taskId,
+      status: 'COMPLETED',
+      downloadUrl: 'https://example.test/report.xlsx',
+    });
+
+    await job.failTask('tenant-1', created.taskId);
+    await expect(service.getExportTask('tenant-1', created.taskId)).resolves.toMatchObject({
+      taskId: created.taskId,
+      status: 'FAILED',
+      downloadUrl: 'https://example.test/report.xlsx',
     });
   });
 

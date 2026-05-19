@@ -45,6 +45,8 @@ erDiagram
   employee ||--o{ leave_request : submits
   employee ||--o{ repair_request : submits
   repair_request ||--o| checkin_record : creates_manual_record
+  factory ||--o{ report_export_task : creates
+  account_user ||--o{ report_export_task : requests
   account_user ||--o{ audit_log : acts
 ```
 
@@ -389,7 +391,32 @@ erDiagram
 - `INDEX (tenant_id, employee_id, target_date)`
 - `UNIQUE (tenant_id, employee_id, target_date, repair_type)`，仅对 `APPROVED` 状态通过部分唯一索引或业务事务保证。
 
-### 3.13 `audit_log`
+### 3.13 `report_export_task`
+
+| 字段 | 类型 | 约束 |
+| --- | --- | --- |
+| `id` | UUID | PK |
+| `tenant_id` | UUID | FK -> tenant, NOT NULL |
+| `factory_id` | UUID | FK -> factory, NOT NULL |
+| `org_unit_id` | UUID | FK -> org_unit, NULL |
+| `month` | VARCHAR(7) | NOT NULL，格式 `YYYY-MM` |
+| `status` | ENUM('PENDING','RUNNING','COMPLETED','FAILED') | NOT NULL |
+| `download_url` | VARCHAR(512) | NULL |
+| `requested_by` | UUID | FK -> account_user, NOT NULL |
+| `created_at / updated_at` | TIMESTAMPTZ | 标准时间戳 |
+
+索引：
+
+- `INDEX (tenant_id, factory_id, month)`
+- `INDEX (tenant_id, status, created_at)`
+- `INDEX (tenant_id, requested_by, created_at)`
+
+说明：
+
+- 导出任务按 `tenant_id` 查询和更新，避免跨租户读取任务状态。
+- Phase 1.5 仅要求任务状态数据库持久化，暂不强制引入 Redis/BullMQ。
+
+### 3.14 `audit_log`
 
 | 字段 | 类型 | 约束 |
 | --- | --- | --- |

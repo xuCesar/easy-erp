@@ -24,6 +24,12 @@ export type MonthlyExportTaskResponse = {
   taskId: string;
 };
 
+export type ReportTaskResponse = {
+  taskId: string;
+  status: ReportTaskRecord['status'];
+  downloadUrl: string | null;
+};
+
 export type MonthlyLockInput = MonthlyReportQuery & {
   confirmedBy: string;
 };
@@ -71,14 +77,14 @@ export class ReportService {
   async getExportTask(
     tenantId: string,
     taskId: string,
-  ): Promise<ReportTaskRecord> {
+  ): Promise<ReportTaskResponse> {
     const task = await this.repository.findExportTask(tenantId, taskId);
 
     if (!task) {
       throw new NotFoundException('Report task not found.');
     }
 
-    return task;
+    return toReportTaskResponse(task);
   }
 
   async confirmMonthlyExportAndLock(
@@ -93,6 +99,14 @@ export class ReportService {
       lockedAt: new Date(),
     };
   }
+}
+
+function toReportTaskResponse(task: ReportTaskRecord): ReportTaskResponse {
+  return {
+    taskId: task.id,
+    status: task.status,
+    downloadUrl: task.downloadUrl,
+  };
 }
 
 function assertMonth(month: string): void {
