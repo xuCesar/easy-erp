@@ -3,12 +3,13 @@
 日期：2026-05-19  
 基础分支：`develop`  
 前置状态：Phase 1 MVP 验证门禁已通过，详见 `docs/plan/phase-1-mvp-readiness-report.md`。
+完成状态：Task 12-18 均已合并到 `develop`，GitHub issues #24-#30 已关闭。
 
 ## 1. 目标
 
-Phase 1.5 的目标是把考勤 MVP 从“代码闭环”推进到“可部署、可演示、可试点”的状态。
+Phase 1.5 的目标是把考勤 MVP 从“代码闭环”推进到“可部署、可演示、可试点”的状态。该阶段已完成，当前仓库具备 CI、真实前端、数据库持久化导出任务、试点初始化流程和端到端冒烟验收脚本。
 
-本阶段不进入 Phase 2 功能扩展，不引入排班、多工厂、多级审批、工资、硬件集成等新业务主线。优先补齐真实前端、CI、导出任务持久化、部署初始化和端到端冒烟验收。
+本阶段不进入 Phase 2 功能扩展，不引入排班、多工厂、多级审批、工资、硬件集成等新业务主线；已按阶段目标补齐真实前端、CI、导出任务持久化、部署初始化和端到端冒烟验收。
 
 ## 2. 范围
 
@@ -34,7 +35,7 @@ Phase 1.5 的目标是把考勤 MVP 从“代码闭环”推进到“可部署�
 
 ## 3. 任务拆解
 
-### Task 12：文档与 issue 基线更新
+### Task 12：文档与 issue 基线更新（已完成）
 
 GitHub issue：[#24](https://github.com/xuCesar/easy-erp/issues/24)
 
@@ -43,7 +44,7 @@ GitHub issue：[#24](https://github.com/xuCesar/easy-erp/issues/24)
 - 创建 Task 13-18 GitHub issues。
 - 后续继续按 Git Flow 从最新 `develop` 拉 `feature/task-*` 分支。
 
-### Task 13：CI 基线
+### Task 13：CI 基线（已完成）
 
 GitHub issue：[#25](https://github.com/xuCesar/easy-erp/issues/25)
 
@@ -56,7 +57,7 @@ GitHub issue：[#25](https://github.com/xuCesar/easy-erp/issues/25)
   - `pnpm build`
 - CI 不连接生产资源，不依赖本地 `.env`。
 
-### Task 14：管理后台真实化
+### Task 14：管理后台真实化（已完成）
 
 GitHub issue：[#26](https://github.com/xuCesar/easy-erp/issues/26)
 
@@ -66,7 +67,7 @@ GitHub issue：[#26](https://github.com/xuCesar/easy-erp/issues/26)
 - 接入统一 API client、登录态、加载态、错误态、空态和基础权限隐藏。
 - 暂不引入复杂低代码后台框架，避免 Phase 1.5 过重。
 
-### Task 15：小程序真实化
+### Task 15：小程序真实化（已完成）
 
 GitHub issue：[#27](https://github.com/xuCesar/easy-erp/issues/27)
 
@@ -74,7 +75,7 @@ GitHub issue：[#27](https://github.com/xuCesar/easy-erp/issues/27)
 - 覆盖登录、打卡、打卡结果、考勤记录、请假申请、补卡申请、个人信息页面。
 - 优先完成 API 对接和状态语义，不做复杂视觉设计。
 
-### Task 16：导出任务生产化
+### Task 16：导出任务生产化（已完成）
 
 GitHub issue：[#28](https://github.com/xuCesar/easy-erp/issues/28)
 
@@ -84,7 +85,7 @@ GitHub issue：[#28](https://github.com/xuCesar/easy-erp/issues/28)
 - 测试覆盖创建、查询、完成、失败、租户隔离和任务不存在。
 - Phase 1.5 暂不强制引入 Redis/BullMQ；如后续导出耗时明显，再单独接入队列。
 
-### Task 17：试点部署与初始化
+### Task 17：试点部署与初始化（已完成）
 
 GitHub issue：[#29](https://github.com/xuCesar/easy-erp/issues/29)
 
@@ -92,7 +93,7 @@ GitHub issue：[#29](https://github.com/xuCesar/easy-erp/issues/29)
 - 提供最小 seed/demo 数据脚本或明确的初始化命令。
 - 编写试点部署 Runbook，覆盖空库初始化、健康检查、回滚注意点和常见故障定位。
 
-### Task 18：端到端冒烟验收
+### Task 18：端到端冒烟验收（已完成）
 
 GitHub issue：[#30](https://github.com/xuCesar/easy-erp/issues/30)
 
@@ -128,10 +129,10 @@ pnpm --filter @easy-erp/api exec prisma migrate deploy --schema prisma/schema.pr
 
 ## 5. 完成标准
 
-- GitHub issue 中 Task 13-18 全部关闭。
-- PR 到 `develop` 的 CI 基线稳定通过。
-- 管理后台和小程序至少具备可运行、可演示的最小页面流。
-- 月报导出任务状态不依赖进程内存。
-- 新环境可以从空库完成迁移和最小初始化。
-- 端到端冒烟验收通过并有文档记录。
-- `pnpm --filter @easy-erp/api smoke:pilot` 在试点环境通过。
+- GitHub issue 中 Task 13-18 全部关闭，已达成。
+- PR 到 `develop` 的 CI 基线稳定通过，已达成。
+- 管理后台和小程序至少具备可运行、可演示的最小页面流，已达成。
+- 月报导出任务状态不依赖进程内存，已达成。
+- 新环境可以从空库完成迁移和最小初始化，已达成。
+- 端到端冒烟验收通过并有文档记录，已达成。
+- `pnpm --filter @easy-erp/api smoke:pilot` 在试点环境通过，已达成。
