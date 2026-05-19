@@ -30,6 +30,8 @@
 - `docs/design/devops-and-env.md`：环境、部署和运维约束。
 - `docs/design/tenant-rls-poc.md`：租户上下文与 RLS POC 边界。
 - `docs/plan/factory-erp-mvp-implementation-plan.md`：Phase 0/1 实施计划。
+- `docs/plan/phase-1-mvp-readiness-report.md`：Phase 1 MVP 验证报告。
+- `docs/plan/phase-1-5-production-pilot-plan.md`：Phase 1.5 生产化试点计划。
 
 历史文档：
 
@@ -72,8 +74,8 @@
 ```txt
 apps/
 ├── api/       # NestJS API
-├── admin/     # React 管理后台，尚未实现
-└── miniapp/   # Taro 小程序，尚未实现
+├── admin/     # React 管理后台，当前为 TypeScript-only MVP 页面流
+└── miniapp/   # Taro 小程序，当前为 TypeScript-only MVP 页面流
 
 packages/
 └── shared-types/
@@ -295,7 +297,16 @@ DATABASE_URL="postgresql://easyerp:easyerp@localhost:5432/easyerp?schema=public"
 - Task 1：Monorepo skeleton，已完成。
 - Task 2：NestJS API + Prisma bootstrap，已完成。
 - Task 3：Tenant context + RLS POC，已完成。
-- Task 4：Auth、Account、Permission foundation，下一阶段。
+- Task 4：Auth、Account、Permission foundation，已完成。
+- Task 5：Organization and Employee modules，已完成。
+- Task 6：Shift and Attendance Group modules，已完成。
+- Task 7：Check-In and Attendance Calculator，已完成。
+- Task 8：Leave and Repair Approval，已完成。
+- Task 9：Reports and Monthly Locking，已完成。
+- Task 10：Minimal Admin and Miniapp Flows，已完成。
+- Task 11：Phase 1 MVP readiness verification，已完成。
+- Task 12：文档与 issue 基线更新，当前阶段。
+- Task 13-18：Phase 1.5 生产化试点任务，详见 `docs/plan/phase-1-5-production-pilot-plan.md`。
 
 开始新任务前：
 
