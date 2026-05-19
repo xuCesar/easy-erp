@@ -10,6 +10,14 @@
 
 ---
 
+## 0. Current Status
+
+Task 1-11 已完成，Phase 1 MVP 验证门禁已通过。验收结果记录在 `docs/plan/phase-1-mvp-readiness-report.md`。
+
+Task 12-18 已完成，Phase 1.5 生产化试点已补齐 CI、真实前端、导出任务持久化、试点部署初始化和端到端冒烟验收。完成状态记录在 `docs/plan/phase-1-5-production-pilot-plan.md`。
+
+---
+
 ## 1. Reference Documents
 
 - `docs/design/factory-erp-attendance-design-v3.md`
@@ -517,3 +525,19 @@ Phase 1 excludes:
 - Multi-timezone factory support.
 
 These are Phase 2 or Phase 3 features and should not be pulled into the MVP implementation.
+
+---
+
+## 6. Phase 1.5 Production Pilot
+
+Phase 1.5 的详细计划与完成标准见 `docs/plan/phase-1-5-production-pilot-plan.md`。
+
+任务拆解与当前状态：
+
+- Task 12：文档与 issue 基线更新，已完成。
+- Task 13：CI 基线，已完成。
+- Task 14：管理后台真实化，已完成。
+- Task 15：小程序真实化，已完成。
+- Task 16：导出任务生产化，已完成。
+- Task 17：试点部署与初始化，已完成。
+- Task 18：端到端冒烟验收，已完成。

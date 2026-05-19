@@ -7,5 +7,7 @@ coverage/
 .env.*
 !.env.example
 .turbo/
+.pnpm-store/
+.swc/
 .next/
 *.log

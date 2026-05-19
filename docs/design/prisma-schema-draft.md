@@ -13,6 +13,7 @@
 注意：
 
 - 这是 schema 草案，不是已验证可迁移的最终文件。
+- 当前工程实现固定 Prisma 6.x；Prisma 7 已调整 datasource URL 配置方式，升级前需要单独评估 `prisma.config.ts` 和客户端初始化方式。
 - PostgreSQL RLS、部分唯一索引、`inet` 类型、数组默认值等能力可能需要手写 SQL migration 补充。
 - 生产实现前必须运行 `prisma validate`、`prisma migrate dev` 和租户隔离测试。
 
@@ -38,6 +39,20 @@ enum EntityStatus {
 enum AccountStatus {
   ACTIVE
   DISABLED
+}
+
+enum RoleName {
+  TENANT_ADMIN
+  HR_ADMIN
+  ORG_MANAGER
+  EMPLOYEE
+}
+
+enum DataScopeType {
+  TENANT
+  FACTORY
+  ORG_UNIT
+  EMPLOYEE
 }
 
 enum EmployeeStatus {
@@ -101,6 +116,13 @@ enum ApprovalStatus {
   REVOKED
 }
 
+enum ReportExportTaskStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
 model Tenant {
   id        String       @id @default(uuid()) @db.Uuid
   name      String       @db.VarChar(128)
@@ -115,6 +137,7 @@ model Tenant {
   orgUnits     OrgUnit[]
   shifts       Shift[]
   auditLogs    AuditLog[]
+  reportExportTasks ReportExportTask[]
 
   @@map("tenant")
 }
@@ -137,6 +160,7 @@ model Factory {
   attendanceGroups AttendanceGroup[]
   checkinRecords   CheckinRecord[]
   attendanceResults AttendanceResult[]
+  reportExportTasks ReportExportTask[]
 
   @@index([tenantId, status])
   @@map("factory")
@@ -160,6 +184,7 @@ model OrgUnit {
   parent   OrgUnit?  @relation("OrgUnitTree", fields: [parentId], references: [id])
   children OrgUnit[] @relation("OrgUnitTree")
   employees Employee[]
+  reportExportTasks ReportExportTask[]
 
   @@index([tenantId, factoryId, parentId])
   @@index([tenantId, factoryId, status])
@@ -183,10 +208,62 @@ model AccountUser {
 
   createdAttendanceGroupMembers AttendanceGroupMember[]
   auditLogs AuditLog[]
+  roles     AccountRole[]
+  dataScopes AccountDataScope[]
+  refreshTokens AccountRefreshToken[]
+  requestedReportExportTasks ReportExportTask[]
 
   @@unique([tenantId, phone])
   @@index([tenantId, employeeId])
   @@map("account_user")
+}
+
+model AccountRole {
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  accountUserId String   @map("account_user_id") @db.Uuid
+  roleName      RoleName @map("role_name")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  accountUser AccountUser @relation(fields: [accountUserId], references: [id])
+
+  @@unique([tenantId, accountUserId, roleName])
+  @@index([tenantId, roleName])
+  @@map("account_role")
+}
+
+model AccountDataScope {
+  id            String        @id @default(uuid()) @db.Uuid
+  tenantId      String        @map("tenant_id") @db.Uuid
+  accountUserId String        @map("account_user_id") @db.Uuid
+  scopeType     DataScopeType @map("scope_type")
+  factoryId     String?       @map("factory_id") @db.Uuid
+  orgUnitId     String?       @map("org_unit_id") @db.Uuid
+  employeeId    String?       @map("employee_id") @db.Uuid
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  accountUser AccountUser @relation(fields: [accountUserId], references: [id])
+
+  @@index([tenantId, accountUserId, scopeType])
+  @@index([tenantId, factoryId])
+  @@index([tenantId, orgUnitId])
+  @@index([tenantId, employeeId])
+  @@map("account_data_scope")
+}
+
+model AccountRefreshToken {
+  id            String    @id @db.Uuid
+  tenantId      String    @map("tenant_id") @db.Uuid
+  accountUserId String    @map("account_user_id") @db.Uuid
+  expiresAt     DateTime  @map("expires_at") @db.Timestamptz(6)
+  revokedAt     DateTime? @map("revoked_at") @db.Timestamptz(6)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  accountUser AccountUser @relation(fields: [accountUserId], references: [id])
+
+  @@index([tenantId, accountUserId, revokedAt])
+  @@index([expiresAt])
+  @@map("account_refresh_token")
 }
 
 model Employee {
@@ -429,6 +506,29 @@ model RepairRequest {
   @@map("repair_request")
 }
 
+model ReportExportTask {
+  id          String                 @id @default(uuid()) @db.Uuid
+  tenantId    String                 @map("tenant_id") @db.Uuid
+  factoryId   String                 @map("factory_id") @db.Uuid
+  orgUnitId   String?                @map("org_unit_id") @db.Uuid
+  month       String                 @db.VarChar(7)
+  status      ReportExportTaskStatus @default(PENDING)
+  downloadUrl String?                @map("download_url") @db.VarChar(512)
+  requestedBy String                 @map("requested_by") @db.Uuid
+  createdAt   DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  tenant    Tenant      @relation(fields: [tenantId], references: [id])
+  factory   Factory     @relation(fields: [factoryId], references: [id])
+  orgUnit   OrgUnit?    @relation(fields: [orgUnitId], references: [id])
+  requester AccountUser @relation(fields: [requestedBy], references: [id])
+
+  @@index([tenantId, factoryId, month])
+  @@index([tenantId, status, createdAt])
+  @@index([tenantId, requestedBy, createdAt])
+  @@map("report_export_task")
+}
+
 model AuditLog {
   id              String   @id @default(uuid()) @db.Uuid
   tenantId        String   @map("tenant_id") @db.Uuid
@@ -507,7 +607,7 @@ SET LOCAL app.tenant_id = '<tenant uuid>';
 4. 创建 `shift`、`attendance_group`、`attendance_group_member`。
 5. 创建 `checkin_record`、`attendance_result`。
 6. 创建 `leave_request`、`repair_request`。
-7. 创建 `audit_log`。
+7. 创建 `report_export_task`、`audit_log`。
 8. 补充手写 SQL 索引和 RLS POC migration。
 
 ---
@@ -517,9 +617,9 @@ SET LOCAL app.tenant_id = '<tenant uuid>';
 后续工程初始化后执行：
 
 ```bash
-pnpm --filter api prisma validate
-pnpm --filter api prisma migrate dev
-pnpm --filter api prisma generate
+pnpm --filter @easy-erp/api exec prisma validate --schema prisma/schema.prisma
+pnpm --filter @easy-erp/api exec prisma migrate dev --schema prisma/schema.prisma
+pnpm --filter @easy-erp/api exec prisma generate --schema prisma/schema.prisma
 ```
 
 通过标准：

@@ -152,6 +152,34 @@
 }
 ```
 
+### `PATCH /api/v1/org-units/:id`
+
+请求：
+
+```json
+{
+  "parentId": null,
+  "name": "生产二组",
+  "type": "GROUP",
+  "sortOrder": 20,
+  "status": "ACTIVE"
+}
+```
+
+说明：
+
+- `parentId` 可以为 `null`，表示调整为工厂直属组织。
+- 不允许跨租户或跨工厂挂载父组织。
+
+### `DELETE /api/v1/org-units/:id`
+
+软删除组织单元。
+
+删除前必须确认：
+
+- 不存在有效子组织。
+- 不存在有效员工。
+
 ### `GET /api/v1/employees`
 
 查询参数：
@@ -181,9 +209,42 @@
 }
 ```
 
+### `PATCH /api/v1/employees/:id`
+
+请求：
+
+```json
+{
+  "orgUnitId": null,
+  "name": "张三",
+  "phone": "13800000000",
+  "status": "ACTIVE"
+}
+```
+
+说明：
+
+- `orgUnitId` 可以为 `null`，表示员工直接归属工厂。
+- 更新 `orgUnitId` 时必须属于同一租户与同一工厂。
+- 更新 `empNo` 时必须保持租户内唯一。
+
+### `DELETE /api/v1/employees/:id`
+
+软删除员工档案，后续涉及考勤、审批和报表时需保留历史数据引用。
+
 ---
 
 ## 6. 班次与考勤组
+
+### `GET /api/v1/shifts`
+
+查询工厂下班次。
+
+查询参数：
+
+| 参数 | 说明 |
+| --- | --- |
+| `factoryId` | 工厂 ID |
 
 ### `POST /api/v1/shifts`
 
@@ -206,6 +267,29 @@
 }
 ```
 
+### `PATCH /api/v1/shifts/:id`
+
+请求字段同创建接口，所有字段均可按需传入。
+
+说明：
+
+- `crossDay = false` 时，`endTime` 必须晚于 `startTime`。
+- `crossDay = true` 时，`endTime` 应早于 `startTime`。
+
+### `DELETE /api/v1/shifts/:id`
+
+软删除班次规则。后续如存在考勤组引用该班次，应先迁移考勤组规则。
+
+### `GET /api/v1/attendance-groups`
+
+查询工厂下考勤组。
+
+查询参数：
+
+| 参数 | 说明 |
+| --- | --- |
+| `factoryId` | 工厂 ID |
+
 ### `POST /api/v1/attendance-groups`
 
 请求：
@@ -226,6 +310,20 @@
 }
 ```
 
+### `PATCH /api/v1/attendance-groups/:id`
+
+请求字段同创建接口，所有字段均可按需传入。
+
+说明：
+
+- 更新 `shiftId` 时，班次必须属于同一租户与同一工厂。
+- 启用 GPS 打卡时必须提供经纬度与半径。
+- 启用 Wi-Fi 打卡时必须提供 SSID 与 BSSID。
+
+### `DELETE /api/v1/attendance-groups/:id`
+
+软删除考勤组规则。历史成员归属和已生成考勤结果不应被物理删除。
+
 ### `POST /api/v1/attendance-groups/:id/members`
 
 请求：
@@ -236,6 +334,11 @@
   "effectiveFrom": "2026-05-17"
 }
 ```
+
+说明：
+
+- 新增成员归属时，会关闭员工上一条有效考勤组归属。
+- 同一员工同一日期最多只能有一个有效考勤组。
 
 ---
 

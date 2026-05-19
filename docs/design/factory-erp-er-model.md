@@ -45,6 +45,8 @@ erDiagram
   employee ||--o{ leave_request : submits
   employee ||--o{ repair_request : submits
   repair_request ||--o| checkin_record : creates_manual_record
+  factory ||--o{ report_export_task : creates
+  account_user ||--o{ report_export_task : requests
   account_user ||--o{ audit_log : acts
 ```
 
@@ -122,6 +124,63 @@ erDiagram
 
 - `UNIQUE (tenant_id, phone)`
 - `INDEX (tenant_id, employee_id)`
+
+### 3.4.1 `account_role`
+
+用于维护账号拥有的系统角色。角色枚举来自权限矩阵：`TENANT_ADMIN`、`HR_ADMIN`、`ORG_MANAGER`、`EMPLOYEE`。
+
+| 字段 | 类型 | 约束 |
+| --- | --- | --- |
+| `id` | UUID | PK |
+| `tenant_id` | UUID | NOT NULL |
+| `account_user_id` | UUID | FK -> account_user, NOT NULL |
+| `role_name` | ENUM | NOT NULL |
+| `created_at` | TIMESTAMPTZ | NOT NULL |
+
+索引：
+
+- `UNIQUE (tenant_id, account_user_id, role_name)`
+- `INDEX (tenant_id, role_name)`
+
+### 3.4.2 `account_data_scope`
+
+用于维护账号的数据访问范围。权限判断由角色权限与数据范围共同决定。
+
+| 字段 | 类型 | 约束 |
+| --- | --- | --- |
+| `id` | UUID | PK |
+| `tenant_id` | UUID | NOT NULL |
+| `account_user_id` | UUID | FK -> account_user, NOT NULL |
+| `scope_type` | ENUM('TENANT','FACTORY','ORG_UNIT','EMPLOYEE') | NOT NULL |
+| `factory_id` | UUID | NULL，`FACTORY` 范围时使用 |
+| `org_unit_id` | UUID | NULL，`ORG_UNIT` 范围时使用 |
+| `employee_id` | UUID | NULL，`EMPLOYEE` 范围时使用 |
+| `created_at` | TIMESTAMPTZ | NOT NULL |
+
+索引：
+
+- `INDEX (tenant_id, account_user_id, scope_type)`
+- `INDEX (tenant_id, factory_id)`
+- `INDEX (tenant_id, org_unit_id)`
+- `INDEX (tenant_id, employee_id)`
+
+### 3.4.3 `account_refresh_token`
+
+用于持久化 refresh token 会话，支持刷新令牌轮换、退出登录撤销和多实例部署下的一致认证状态。
+
+| 字段 | 类型 | 约束 |
+| --- | --- | --- |
+| `id` | UUID | PK，对应 refresh token `jti` |
+| `tenant_id` | UUID | NOT NULL |
+| `account_user_id` | UUID | FK -> account_user, NOT NULL |
+| `expires_at` | TIMESTAMPTZ | NOT NULL |
+| `revoked_at` | TIMESTAMPTZ | NULL |
+| `created_at` | TIMESTAMPTZ | NOT NULL |
+
+索引：
+
+- `INDEX (tenant_id, account_user_id, revoked_at)`
+- `INDEX (expires_at)`
 
 ### 3.5 `employee`
 
@@ -332,7 +391,32 @@ erDiagram
 - `INDEX (tenant_id, employee_id, target_date)`
 - `UNIQUE (tenant_id, employee_id, target_date, repair_type)`，仅对 `APPROVED` 状态通过部分唯一索引或业务事务保证。
 
-### 3.13 `audit_log`
+### 3.13 `report_export_task`
+
+| 字段 | 类型 | 约束 |
+| --- | --- | --- |
+| `id` | UUID | PK |
+| `tenant_id` | UUID | FK -> tenant, NOT NULL |
+| `factory_id` | UUID | FK -> factory, NOT NULL |
+| `org_unit_id` | UUID | FK -> org_unit, NULL |
+| `month` | VARCHAR(7) | NOT NULL，格式 `YYYY-MM` |
+| `status` | ENUM('PENDING','RUNNING','COMPLETED','FAILED') | NOT NULL |
+| `download_url` | VARCHAR(512) | NULL |
+| `requested_by` | UUID | FK -> account_user, NOT NULL |
+| `created_at / updated_at` | TIMESTAMPTZ | 标准时间戳 |
+
+索引：
+
+- `INDEX (tenant_id, factory_id, month)`
+- `INDEX (tenant_id, status, created_at)`
+- `INDEX (tenant_id, requested_by, created_at)`
+
+说明：
+
+- 导出任务按 `tenant_id` 查询和更新，避免跨租户读取任务状态。
+- Phase 1.5 仅要求任务状态数据库持久化，暂不强制引入 Redis/BullMQ。
+
+### 3.14 `audit_log`
 
 | 字段 | 类型 | 约束 |
 | --- | --- | --- |

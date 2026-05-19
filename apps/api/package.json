@@ -1,0 +1,32 @@
+{
+  "name": "@easy-erp/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "seed:demo": "tsx src/scripts/seed-demo.ts",
+    "smoke:pilot": "tsx src/scripts/pilot-smoke.ts",
+    "start:dev": "node --watch -r ts-node/register src/main.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.21",
+    "@nestjs/core": "^11.1.21",
+    "@nestjs/platform-express": "^11.1.21",
+    "@prisma/client": "^6.19.3",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@nestjs/testing": "^11.1.21",
+    "@types/node": "^25.8.0",
+    "@types/supertest": "^7.2.0",
+    "prisma": "^6.19.3",
+    "supertest": "^7.2.2",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.22.1",
+    "vitest": "^4.1.6"
+  }
+}

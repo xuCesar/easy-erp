@@ -2,7 +2,7 @@
 
 面向中小型制造工厂的轻量企业管理系统。当前阶段以考勤模块为切入点，目标是先交付单工厂考勤闭环，再逐步扩展到排班、多工厂、工资、计件、门禁和硬件集成。
 
-当前仓库状态：文档设计阶段，尚未初始化应用工程。
+当前仓库状态：Phase 1 单工厂考勤 MVP 与 Phase 1.5 生产化试点任务均已完成。当前能力包括可运行管理后台、可运行 Taro 小程序、GitHub Actions CI、数据库持久化月报导出任务、试点初始化 Runbook 和端到端冒烟验收脚本。
 
 ---
 
@@ -42,6 +42,10 @@ Phase 1 不包含：
 | [Attendance Calculation Cases](docs/design/attendance-calculation-cases.md) | 考勤计算规则和 C001-C018 用例矩阵 |
 | [DevOps And Env](docs/design/devops-and-env.md) | 环境变量、Docker、CI、迁移、备份、运维约束 |
 | [MVP Implementation Plan](docs/plan/factory-erp-mvp-implementation-plan.md) | Phase 0/1 实施任务拆解 |
+| [Phase 1 MVP Readiness Report](docs/plan/phase-1-mvp-readiness-report.md) | Phase 1 验证门禁结果 |
+| [Phase 1.5 Production Pilot Plan](docs/plan/phase-1-5-production-pilot-plan.md) | 生产化试点任务拆解与完成标准 |
+| [Phase 1.5 Pilot Deployment Runbook](docs/plan/phase-1-5-pilot-deployment-runbook.md) | 试点部署、空库初始化、demo seed 和故障定位 |
+| [Phase 1.5 Smoke Acceptance](docs/plan/phase-1-5-smoke-acceptance.md) | 端到端冒烟脚本、UI 清单和阻断条件 |
 
 历史文档：
 
@@ -54,7 +58,7 @@ V3 及其拆分文档是当前主设计源。
 
 ## 3. 推荐工程结构
 
-计划采用 TypeScript monorepo：
+当前采用 TypeScript monorepo：
 
 ```txt
 apps/
@@ -63,8 +67,7 @@ apps/
 └── miniapp/   # Taro 小程序
 
 packages/
-├── shared-types/
-└── eslint-config/
+└── shared-types/
 
 docs/
 ├── design/
@@ -82,8 +85,8 @@ docs/
 | 后端 | NestJS + TypeScript |
 | ORM | Prisma |
 | 数据库 | PostgreSQL 15+ |
-| 缓存/队列 | Redis + BullMQ |
-| 管理后台 | React + Ant Design Pro |
+| 缓存/队列 | Redis + BullMQ 为后续预留；Phase 1.5 暂不强制引入 |
+| 管理后台 | Vite + React + TypeScript |
 | 小程序 | Taro + React |
 | 对象存储 | MinIO / 腾讯云 COS |
 | 容器 | Docker + Docker Compose |
@@ -103,22 +106,69 @@ docs/
 
 ---
 
-## 6. 下一步建议
+## 6. 当前里程碑
 
-推荐按以下顺序推进：
+当前 Task 1-18 均已完成，相关 GitHub issues 已关闭：
 
-1. 初始化 git 仓库、`.gitignore`、`package.json`、`pnpm-workspace.yaml`。
-2. 初始化 `apps/api`，接入 NestJS、Prisma、PostgreSQL、Redis。
-3. 根据 [Prisma Schema Draft](docs/design/prisma-schema-draft.md) 创建首版 `schema.prisma`。
-4. 做租户上下文与 RLS POC。
-5. 实现账号、权限、组织、员工基础模块。
-6. 实现班次、考勤组、打卡和考勤计算。
+- Task 1-11：Phase 1 单工厂考勤 MVP 与验证门禁。
+- Task 12-18：Phase 1.5 生产化试点，包括 CI、真实前端、导出任务持久化、试点部署初始化和端到端冒烟验收。
+
+后续进入 Phase 2 前，建议先基于试点反馈确认下一批 GitHub issues，避免把排班、多工厂、工资、硬件集成等新主线混入当前稳定化收尾。
 
 ---
 
-## 7. 验证要求
+## 7. 本地运行
 
-后续工程初始化后，最小验证命令应包含：
+完整试点部署步骤见 [Phase 1.5 Pilot Deployment Runbook](docs/plan/phase-1-5-pilot-deployment-runbook.md)。
+
+API 试点环境快速启动：
+
+```bash
+docker compose up -d postgres redis
+pnpm --filter @easy-erp/api exec prisma migrate deploy --schema prisma/schema.prisma
+pnpm --filter @easy-erp/api seed:demo
+pnpm --filter @easy-erp/api start:dev
+```
+
+默认 demo 管理员账号为 `13800000000`，密码由 `DEMO_ADMIN_PASSWORD` 控制；默认 demo 员工账号为 `13900000001`，密码由 `DEMO_EMPLOYEE_PASSWORD` 控制。本地未设置时脚本使用 `EasyERP@demo123`。生产或正式演示环境必须通过 Secret 注入强密码。
+
+端到端冒烟验收：
+
+```bash
+pnpm --filter @easy-erp/api smoke:pilot
+```
+
+管理后台：
+
+```bash
+pnpm --filter @easy-erp/admin dev
+```
+
+默认会将 `/api` 代理到 `http://127.0.0.1:3000`。如果 API 使用其他地址，可以设置：
+
+```bash
+ADMIN_API_PROXY_TARGET="http://127.0.0.1:3001" pnpm --filter @easy-erp/admin dev
+```
+
+小程序：
+
+```bash
+pnpm --filter @easy-erp/miniapp dev:weapp
+```
+
+构建微信小程序产物：
+
+```bash
+pnpm --filter @easy-erp/miniapp build
+```
+
+产物输出到 `apps/miniapp/dist/`，可用微信开发者工具打开该目录进行预览和真机调试。
+
+---
+
+## 8. 验证要求
+
+常用验证命令：
 
 ```bash
 pnpm typecheck
