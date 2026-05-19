@@ -132,6 +132,20 @@ pnpm --filter @easy-erp/admin dev
 ADMIN_API_PROXY_TARGET="http://127.0.0.1:3001" pnpm --filter @easy-erp/admin dev
 ```
 
+小程序：
+
+```bash
+pnpm --filter @easy-erp/miniapp dev:weapp
+```
+
+构建微信小程序产物：
+
+```bash
+pnpm --filter @easy-erp/miniapp build
+```
+
+产物输出到 `apps/miniapp/dist/`，可用微信开发者工具打开该目录进行预览和真机调试。
+
 ---
 
 ## 8. 验证要求
