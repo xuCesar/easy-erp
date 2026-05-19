@@ -99,6 +99,7 @@ GitHub issue：[#30](https://github.com/xuCesar/easy-erp/issues/30)
 - 建立试点验收脚本或手工清单。
 - 覆盖管理员登录、创建员工、配置班次和考勤组、员工打卡、考勤结果生成、请假/补卡申请、审批、月报查看、月报锁定和导出任务查询。
 - 将冒烟结果作为 Phase 1.5 完成前的阻断项。
+- 冒烟验收记录见 `docs/plan/phase-1-5-smoke-acceptance.md`。
 
 ## 4. 验证要求
 
@@ -133,3 +134,4 @@ pnpm --filter @easy-erp/api exec prisma migrate deploy --schema prisma/schema.pr
 - 月报导出任务状态不依赖进程内存。
 - 新环境可以从空库完成迁移和最小初始化。
 - 端到端冒烟验收通过并有文档记录。
+- `pnpm --filter @easy-erp/api smoke:pilot` 在试点环境通过。

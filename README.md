@@ -45,6 +45,7 @@ Phase 1 不包含：
 | [Phase 1 MVP Readiness Report](docs/plan/phase-1-mvp-readiness-report.md) | Phase 1 验证门禁结果 |
 | [Phase 1.5 Production Pilot Plan](docs/plan/phase-1-5-production-pilot-plan.md) | 生产化试点任务拆解 |
 | [Phase 1.5 Pilot Deployment Runbook](docs/plan/phase-1-5-pilot-deployment-runbook.md) | 试点部署、空库初始化、demo seed 和故障定位 |
+| [Phase 1.5 Smoke Acceptance](docs/plan/phase-1-5-smoke-acceptance.md) | 端到端冒烟脚本、UI 清单和阻断条件 |
 
 历史文档：
 
@@ -133,6 +134,12 @@ pnpm --filter @easy-erp/api start:dev
 ```
 
 默认 demo 管理员账号为 `13800000000`，密码由 `DEMO_ADMIN_PASSWORD` 控制；本地未设置时脚本使用 `EasyERP@demo123`。生产或正式演示环境必须通过 Secret 注入强密码。
+
+端到端冒烟验收：
+
+```bash
+pnpm --filter @easy-erp/api smoke:pilot
+```
 
 管理后台：
 

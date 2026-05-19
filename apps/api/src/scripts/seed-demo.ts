@@ -19,6 +19,7 @@ const demo = {
   orgUnitId: '33333333-3333-4333-8333-333333333333',
   adminAccountId: '44444444-4444-4444-8444-444444444444',
   adminEmployeeId: '55555555-5555-4555-8555-555555555555',
+  workerAccountId: '56565656-5656-4656-8656-565656565656',
   workerEmployeeId: '66666666-6666-4666-8666-666666666666',
   shiftId: '77777777-7777-4777-8777-777777777777',
   attendanceGroupId: '88888888-8888-4888-8888-888888888888',
@@ -27,13 +28,18 @@ const demo = {
   clockInRecordId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
   clockOutRecordId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
   attendanceResultId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+  adminTenantScopeId: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+  workerEmployeeScopeId: 'efefefef-efef-4fef-8fef-efefefefefef',
 } as const;
 
 const adminPhone = process.env.DEMO_ADMIN_PHONE ?? '13800000000';
 const adminPassword = process.env.DEMO_ADMIN_PASSWORD ?? 'EasyERP@demo123';
+const employeePhone = process.env.DEMO_EMPLOYEE_PHONE ?? '13900000001';
+const employeePassword = process.env.DEMO_EMPLOYEE_PASSWORD ?? 'EasyERP@demo123';
 
 async function main(): Promise<void> {
-  const passwordHash = await passwordService.hashPassword(adminPassword);
+  const adminPasswordHash = await passwordService.hashPassword(adminPassword);
+  const employeePasswordHash = await passwordService.hashPassword(employeePassword);
 
   await prisma.$transaction(async (tx) => {
     await tx.tenant.upsert({
@@ -121,7 +127,7 @@ async function main(): Promise<void> {
         orgUnitId: demo.orgUnitId,
         empNo: 'EMP001',
         name: '张三',
-        phone: '13900000001',
+        phone: employeePhone,
         entryDate: dateOnly('2026-05-01'),
         status: EmployeeStatus.ACTIVE,
       },
@@ -129,7 +135,7 @@ async function main(): Promise<void> {
         factoryId: demo.factoryId,
         orgUnitId: demo.orgUnitId,
         name: '张三',
-        phone: '13900000001',
+        phone: employeePhone,
         status: EmployeeStatus.ACTIVE,
         deletedAt: null,
       },
@@ -142,13 +148,32 @@ async function main(): Promise<void> {
         tenantId: demo.tenantId,
         employeeId: demo.adminEmployeeId,
         phone: adminPhone,
-        passwordHash,
+        passwordHash: adminPasswordHash,
         status: 'ACTIVE',
       },
       update: {
         employeeId: demo.adminEmployeeId,
         phone: adminPhone,
-        passwordHash,
+        passwordHash: adminPasswordHash,
+        status: 'ACTIVE',
+        deletedAt: null,
+      },
+    });
+
+    await tx.accountUser.upsert({
+      where: { id: demo.workerAccountId },
+      create: {
+        id: demo.workerAccountId,
+        tenantId: demo.tenantId,
+        employeeId: demo.workerEmployeeId,
+        phone: employeePhone,
+        passwordHash: employeePasswordHash,
+        status: 'ACTIVE',
+      },
+      update: {
+        employeeId: demo.workerEmployeeId,
+        phone: employeePhone,
+        passwordHash: employeePasswordHash,
         status: 'ACTIVE',
         deletedAt: null,
       },
@@ -171,9 +196,9 @@ async function main(): Promise<void> {
     });
 
     await tx.accountDataScope.upsert({
-      where: { id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee' },
+      where: { id: demo.adminTenantScopeId },
       create: {
-        id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+        id: demo.adminTenantScopeId,
         tenantId: demo.tenantId,
         accountUserId: demo.adminAccountId,
         scopeType: DataScopeType.TENANT,
@@ -185,6 +210,41 @@ async function main(): Promise<void> {
         factoryId: null,
         orgUnitId: null,
         employeeId: null,
+      },
+    });
+
+    await tx.accountRole.upsert({
+      where: {
+        tenantId_accountUserId_roleName: {
+          tenantId: demo.tenantId,
+          accountUserId: demo.workerAccountId,
+          roleName: RoleName.EMPLOYEE,
+        },
+      },
+      create: {
+        tenantId: demo.tenantId,
+        accountUserId: demo.workerAccountId,
+        roleName: RoleName.EMPLOYEE,
+      },
+      update: {},
+    });
+
+    await tx.accountDataScope.upsert({
+      where: { id: demo.workerEmployeeScopeId },
+      create: {
+        id: demo.workerEmployeeScopeId,
+        tenantId: demo.tenantId,
+        accountUserId: demo.workerAccountId,
+        scopeType: DataScopeType.EMPLOYEE,
+        employeeId: demo.workerEmployeeId,
+      },
+      update: {
+        tenantId: demo.tenantId,
+        accountUserId: demo.workerAccountId,
+        scopeType: DataScopeType.EMPLOYEE,
+        factoryId: null,
+        orgUnitId: null,
+        employeeId: demo.workerEmployeeId,
       },
     });
 
@@ -398,7 +458,9 @@ function printSummary(): void {
   console.info(`Tenant ID: ${demo.tenantId}`);
   console.info(`Factory ID: ${demo.factoryId}`);
   console.info(`Admin phone: ${adminPhone}`);
+  console.info(`Employee phone: ${employeePhone}`);
   console.info('Admin password: from DEMO_ADMIN_PASSWORD, or local default when unset.');
+  console.info('Employee password: from DEMO_EMPLOYEE_PASSWORD, or local default when unset.');
 }
 
 main()

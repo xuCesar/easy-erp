@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "seed:demo": "tsx src/scripts/seed-demo.ts",
-    "start:dev": "tsx watch src/main.ts",
+    "smoke:pilot": "tsx src/scripts/pilot-smoke.ts",
+    "start:dev": "node --watch -r ts-node/register src/main.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run"
   },
