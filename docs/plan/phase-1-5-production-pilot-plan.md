@@ -121,8 +121,8 @@ pnpm --filter @easy-erp/api build
 涉及数据库迁移的任务必须验证空库可执行：
 
 ```bash
-pnpm --filter @easy-erp/api exec prisma validate
-pnpm --filter @easy-erp/api exec prisma migrate deploy
+pnpm --filter @easy-erp/api exec prisma validate --schema prisma/schema.prisma
+pnpm --filter @easy-erp/api exec prisma migrate deploy --schema prisma/schema.prisma
 ```
 
 ## 5. 完成标准

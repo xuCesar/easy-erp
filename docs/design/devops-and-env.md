@@ -52,6 +52,8 @@
 | `JWT_ACCESS_EXPIRES_IN` | `2h` | Access Token 有效期 |
 | `JWT_REFRESH_EXPIRES_IN` | `30d` | Refresh Token 有效期 |
 | `APP_TIMEZONE` | `Asia/Shanghai` | Phase 1 默认时区 |
+| `DEMO_ADMIN_PHONE` | `13800000000` | 本地 demo seed 管理员手机号 |
+| `DEMO_ADMIN_PASSWORD` | `replace-with-demo-password` | 本地 demo seed 管理员密码，正式演示需通过 Secret 注入 |
 | `OBJECT_STORAGE_PROVIDER` | `minio` | `minio` 或 `cos` |
 | `OBJECT_STORAGE_BUCKET` | `factory-erp` | 对象存储桶 |
 | `OBJECT_STORAGE_ENDPOINT` | `http://localhost:9000` | MinIO 或 COS endpoint |
@@ -125,10 +127,10 @@ volumes:
 本地启动顺序：
 
 ```bash
-docker compose up -d postgres redis minio
-pnpm --filter api prisma migrate dev
-pnpm --filter api prisma db seed
-pnpm --filter api start:dev
+docker compose up -d postgres redis
+pnpm --filter @easy-erp/api exec prisma migrate deploy --schema prisma/schema.prisma
+pnpm --filter @easy-erp/api seed:demo
+pnpm --filter @easy-erp/api start:dev
 ```
 
 ---
@@ -140,7 +142,7 @@ pnpm --filter api start:dev
 开发环境使用：
 
 ```bash
-pnpm --filter api prisma migrate dev
+pnpm --filter @easy-erp/api exec prisma migrate dev --schema prisma/schema.prisma
 ```
 
 要求：
@@ -154,7 +156,7 @@ pnpm --filter api prisma migrate dev
 生产环境使用：
 
 ```bash
-pnpm --filter api prisma migrate deploy
+pnpm --filter @easy-erp/api exec prisma migrate deploy --schema prisma/schema.prisma
 ```
 
 上线前检查：
@@ -186,6 +188,17 @@ local/test 环境默认 Seed：
 - 一个白班：`08:00-17:00`
 - 一个考勤组：`生产一组考勤`
 - 两个员工样例。
+- 一条 demo 打卡记录和一条 2026-05 月报可查询的考勤结果。
+
+执行命令：
+
+```bash
+DEMO_ADMIN_PHONE="13800000000" \
+DEMO_ADMIN_PASSWORD="change-me-before-demo" \
+  pnpm --filter @easy-erp/api seed:demo
+```
+
+`seed:demo` 是幂等脚本，重复执行会更新固定 demo 记录并重置 demo 管理员密码。
 
 生产环境 Seed：
 
