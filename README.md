@@ -2,7 +2,7 @@
 
 面向中小型制造工厂的轻量企业管理系统。当前阶段以考勤模块为切入点，目标是先交付单工厂考勤闭环，再逐步扩展到排班、多工厂、工资、计件、门禁和硬件集成。
 
-当前仓库状态：已初始化 pnpm workspace，并完成 API 基础工程、Prisma schema、租户上下文与 RLS POC。后续按 GitHub issue 和 `docs/plan/factory-erp-mvp-implementation-plan.md` 逐项推进。
+当前仓库状态：Phase 1 单工厂考勤 MVP 已完成代码级闭环和验证门禁。后续进入 Phase 1.5 生产化试点，优先补齐真实前端、CI、导出任务持久化、部署初始化和端到端冒烟验收。
 
 ---
 
@@ -42,6 +42,8 @@ Phase 1 不包含：
 | [Attendance Calculation Cases](docs/design/attendance-calculation-cases.md) | 考勤计算规则和 C001-C018 用例矩阵 |
 | [DevOps And Env](docs/design/devops-and-env.md) | 环境变量、Docker、CI、迁移、备份、运维约束 |
 | [MVP Implementation Plan](docs/plan/factory-erp-mvp-implementation-plan.md) | Phase 0/1 实施任务拆解 |
+| [Phase 1 MVP Readiness Report](docs/plan/phase-1-mvp-readiness-report.md) | Phase 1 验证门禁结果 |
+| [Phase 1.5 Production Pilot Plan](docs/plan/phase-1-5-production-pilot-plan.md) | 生产化试点任务拆解 |
 
 历史文档：
 
@@ -54,7 +56,7 @@ V3 及其拆分文档是当前主设计源。
 
 ## 3. 推荐工程结构
 
-计划采用 TypeScript monorepo：
+当前采用 TypeScript monorepo：
 
 ```txt
 apps/
@@ -63,8 +65,7 @@ apps/
 └── miniapp/   # Taro 小程序
 
 packages/
-├── shared-types/
-└── eslint-config/
+└── shared-types/
 
 docs/
 ├── design/
@@ -82,8 +83,8 @@ docs/
 | 后端 | NestJS + TypeScript |
 | ORM | Prisma |
 | 数据库 | PostgreSQL 15+ |
-| 缓存/队列 | Redis + BullMQ |
-| 管理后台 | React + Ant Design Pro |
+| 缓存/队列 | Redis + BullMQ 为后续预留；Phase 1.5 暂不强制引入 |
+| 管理后台 | React；Phase 1.5 推荐 Vite + React + TypeScript |
 | 小程序 | Taro + React |
 | 对象存储 | MinIO / 腾讯云 COS |
 | 容器 | Docker + Docker Compose |
@@ -105,14 +106,15 @@ docs/
 
 ## 6. 下一步建议
 
-当前 Task 1-3 已完成，后续推荐按 GitHub issue 和实施计划继续推进：
+当前 Task 1-11 已完成，Phase 1.5 推荐按 GitHub issue 继续推进：
 
-1. Task 4：实现 Auth、Account、Permission foundation。
-2. Task 5：实现组织与员工基础模块。
-3. Task 6：实现班次与考勤组模块。
-4. Task 7：实现打卡与考勤计算。
-5. Task 8：实现请假与补卡审批。
-6. Task 9-11：完成报表、月度锁定、最小端侧流程和 MVP 验收。
+1. Task 12：文档与 issue 基线更新。
+2. Task 13：CI 基线。
+3. Task 14：管理后台真实化。
+4. Task 15：小程序真实化。
+5. Task 16：导出任务生产化。
+6. Task 17：试点部署与初始化。
+7. Task 18：端到端冒烟验收。
 
 ---
 
