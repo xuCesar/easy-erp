@@ -617,9 +617,9 @@ SET LOCAL app.tenant_id = '<tenant uuid>';
 后续工程初始化后执行：
 
 ```bash
-pnpm --filter api prisma validate
-pnpm --filter api prisma migrate dev
-pnpm --filter api prisma generate
+pnpm --filter @easy-erp/api exec prisma validate --schema prisma/schema.prisma
+pnpm --filter @easy-erp/api exec prisma migrate dev --schema prisma/schema.prisma
+pnpm --filter @easy-erp/api exec prisma generate --schema prisma/schema.prisma
 ```
 
 通过标准：
