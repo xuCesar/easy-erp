@@ -1,4 +1,4 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleDestroy, OnModuleInit, Optional } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { getTenantContext } from './tenant-context';
 
@@ -17,7 +17,7 @@ export class TenantPrismaService implements OnModuleInit, OnModuleDestroy {
   private readonly prisma: PrismaTransactionHost;
   private readonly lifecycleClient?: PrismaClient;
 
-  constructor(prisma?: PrismaTransactionHost) {
+  constructor(@Optional() prisma?: PrismaTransactionHost) {
     if (prisma) {
       this.prisma = prisma;
       return;

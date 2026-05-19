@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Optional, UnauthorizedException } from '@nestjs/common';
 import { createHmac, randomUUID } from 'node:crypto';
 import type { AuthPrincipal, AuthTokenClaims, TokenKind } from './auth.types';
 
@@ -21,7 +21,7 @@ export class TokenService {
   private readonly accessSecret: string;
   private readonly refreshSecret: string;
 
-  constructor(secrets?: TokenSecrets) {
+  constructor(@Optional() secrets?: TokenSecrets) {
     this.accessSecret =
       secrets?.accessSecret ?? requireEnv('JWT_ACCESS_SECRET');
     this.refreshSecret =
