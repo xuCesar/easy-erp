@@ -1,6 +1,5 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { randomUUID } from 'node:crypto';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, ReportExportTaskStatus } from '@prisma/client';
 import type { AttendanceResultRecord } from '../attendance';
 
 export type MonthlyReportQuery = {
@@ -10,7 +9,7 @@ export type MonthlyReportQuery = {
   month: string;
 };
 
-export type ReportTaskStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+export type ReportTaskStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
 
 export type ReportTaskRecord = {
   id: string;
@@ -49,7 +48,6 @@ export class PrismaReportRepository
   implements ReportRepository, OnModuleInit, OnModuleDestroy
 {
   private readonly prisma = new PrismaClient();
-  private readonly tasks = new Map<string, ReportTaskRecord>();
 
   async onModuleInit(): Promise<void> {
     await this.prisma.$connect();
@@ -110,29 +108,31 @@ export class PrismaReportRepository
   async createExportTask(
     input: CreateReportTaskInput,
   ): Promise<ReportTaskRecord> {
-    const now = new Date();
-    const task: ReportTaskRecord = {
-      id: randomUUID(),
-      tenantId: input.tenantId,
-      factoryId: input.factoryId,
-      orgUnitId: input.orgUnitId,
-      month: input.month,
-      status: 'PENDING',
-      downloadUrl: null,
-      requestedBy: input.requestedBy,
-      createdAt: now,
-      updatedAt: now,
-    };
-    this.tasks.set(task.id, task);
-    return task;
+    const task = await this.prisma.reportExportTask.create({
+      data: {
+        tenantId: input.tenantId,
+        factoryId: input.factoryId,
+        orgUnitId: input.orgUnitId,
+        month: input.month,
+        requestedBy: input.requestedBy,
+      },
+    });
+
+    return toReportTaskRecord(task);
   }
 
   async findExportTask(
     tenantId: string,
     id: string,
   ): Promise<ReportTaskRecord | null> {
-    const task = this.tasks.get(id);
-    return task?.tenantId === tenantId ? task : null;
+    const task = await this.prisma.reportExportTask.findFirst({
+      where: {
+        id,
+        tenantId,
+      },
+    });
+
+    return task ? toReportTaskRecord(task) : null;
   }
 
   async updateExportTask(
@@ -140,19 +140,30 @@ export class PrismaReportRepository
     id: string,
     input: Partial<Pick<ReportTaskRecord, 'status' | 'downloadUrl'>>,
   ): Promise<ReportTaskRecord> {
+    const result = await this.prisma.reportExportTask.updateMany({
+      where: {
+        id,
+        tenantId,
+      },
+      data: {
+        ...(input.status ? { status: input.status } : {}),
+        ...(input.downloadUrl !== undefined
+          ? { downloadUrl: input.downloadUrl }
+          : {}),
+      },
+    });
+
+    if (result.count === 0) {
+      throw new Error('Report task not found.');
+    }
+
     const task = await this.findExportTask(tenantId, id);
 
     if (!task) {
       throw new Error('Report task not found.');
     }
 
-    const updated = {
-      ...task,
-      ...input,
-      updatedAt: new Date(),
-    };
-    this.tasks.set(id, updated);
-    return updated;
+    return task;
   }
 }
 
@@ -166,6 +177,19 @@ type PrismaAttendanceResultRecord = Omit<
   calculationVersion: number;
 };
 
+type PrismaReportTaskRecord = {
+  id: string;
+  tenantId: string;
+  factoryId: string;
+  orgUnitId: string | null;
+  month: string;
+  status: ReportExportTaskStatus;
+  downloadUrl: string | null;
+  requestedBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 function toAttendanceResultRecord(
   record: PrismaAttendanceResultRecord,
 ): AttendanceResultRecord {
@@ -175,6 +199,15 @@ function toAttendanceResultRecord(
     statusFlags: record.statusFlags as AttendanceResultRecord['statusFlags'],
     anomalyFlags: record.anomalyFlags as AttendanceResultRecord['anomalyFlags'],
     calculationVersion: 1,
+  };
+}
+
+export function toReportTaskRecord(
+  record: PrismaReportTaskRecord,
+): ReportTaskRecord {
+  return {
+    ...record,
+    status: record.status,
   };
 }
 

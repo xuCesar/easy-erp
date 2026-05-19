@@ -92,6 +92,13 @@ enum ApprovalStatus {
   REVOKED
 }
 
+enum ReportExportTaskStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
 model Tenant {
   id        String       @id @default(uuid()) @db.Uuid
   name      String       @db.VarChar(128)
@@ -106,6 +113,7 @@ model Tenant {
   orgUnits  OrgUnit[]
   shifts    Shift[]
   auditLogs AuditLog[]
+  reportExportTasks ReportExportTask[]
 
   @@map("tenant")
 }
@@ -128,6 +136,7 @@ model Factory {
   attendanceGroups  AttendanceGroup[]
   checkinRecords    CheckinRecord[]
   attendanceResults AttendanceResult[]
+  reportExportTasks ReportExportTask[]
 
   @@index([tenantId, status])
   @@map("factory")
@@ -151,6 +160,7 @@ model OrgUnit {
   parent    OrgUnit?   @relation("OrgUnitTree", fields: [parentId], references: [id])
   children  OrgUnit[]  @relation("OrgUnitTree")
   employees Employee[]
+  reportExportTasks ReportExportTask[]
 
   @@index([tenantId, factoryId, parentId])
   @@index([tenantId, factoryId, status])
@@ -177,6 +187,7 @@ model AccountUser {
   roles                         AccountRole[]
   dataScopes                    AccountDataScope[]
   refreshTokens                 AccountRefreshToken[]
+  requestedReportExportTasks    ReportExportTask[]
 
   @@unique([tenantId, phone])
   @@index([tenantId, employeeId])
@@ -469,6 +480,29 @@ model RepairRequest {
 
   @@index([tenantId, employeeId, targetDate])
   @@map("repair_request")
+}
+
+model ReportExportTask {
+  id          String                 @id @default(uuid()) @db.Uuid
+  tenantId    String                 @map("tenant_id") @db.Uuid
+  factoryId   String                 @map("factory_id") @db.Uuid
+  orgUnitId   String?                @map("org_unit_id") @db.Uuid
+  month       String                 @db.VarChar(7)
+  status      ReportExportTaskStatus @default(PENDING)
+  downloadUrl String?                @map("download_url") @db.VarChar(512)
+  requestedBy String                 @map("requested_by") @db.Uuid
+  createdAt   DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  tenant    Tenant      @relation(fields: [tenantId], references: [id])
+  factory   Factory     @relation(fields: [factoryId], references: [id])
+  orgUnit   OrgUnit?    @relation(fields: [orgUnitId], references: [id])
+  requester AccountUser @relation(fields: [requestedBy], references: [id])
+
+  @@index([tenantId, factoryId, month])
+  @@index([tenantId, status, createdAt])
+  @@index([tenantId, requestedBy, createdAt])
+  @@map("report_export_task")
 }
 
 model AuditLog {
