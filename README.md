@@ -118,7 +118,23 @@ docs/
 
 ---
 
-## 7. 验证要求
+## 7. 本地运行
+
+管理后台：
+
+```bash
+pnpm --filter @easy-erp/admin dev
+```
+
+默认会将 `/api` 代理到 `http://127.0.0.1:3000`。如果 API 使用其他地址，可以设置：
+
+```bash
+ADMIN_API_PROXY_TARGET="http://127.0.0.1:3001" pnpm --filter @easy-erp/admin dev
+```
+
+---
+
+## 8. 验证要求
 
 后续工程初始化后，最小验证命令应包含：
 
