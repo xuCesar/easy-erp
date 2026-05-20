@@ -28,10 +28,13 @@
 - `docs/design/permission-matrix.md`：权限矩阵。
 - `docs/design/attendance-calculation-cases.md`：考勤计算用例。
 - `docs/design/devops-and-env.md`：环境、部署和运维约束。
+- `docs/design/ui-visual-system-v1.md`：Phase 1.7 UI 视觉系统。
 - `docs/design/tenant-rls-poc.md`：租户上下文与 RLS POC 边界。
 - `docs/plan/factory-erp-mvp-implementation-plan.md`：Phase 0/1 实施计划。
 - `docs/plan/phase-1-mvp-readiness-report.md`：Phase 1 MVP 验证报告。
 - `docs/plan/phase-1-5-production-pilot-plan.md`：Phase 1.5 生产化试点计划。
+- `docs/plan/phase-1-6-pilot-hardening-plan.md`：Phase 1.6 试点硬化计划。
+- `docs/plan/phase-1-7-ui-brand-refresh-plan.md`：Phase 1.7 UI 品牌升级计划。
 
 历史文档：
 
@@ -86,6 +89,28 @@ docs/
 ```
 
 包管理器固定使用 `pnpm`。不要混用 npm、yarn 或 bun 安装依赖。
+
+---
+
+## 前端 UI 约束
+
+Phase 1.7 起，Admin 与小程序的视觉升级以 `docs/design/ui-visual-system-v1.md` 为准。
+
+Admin：
+
+- 保留 Vite + React + TypeScript。
+- 采用 Tailwind-first + shadcn/ui。
+- shadcn 组件源码只放在 `apps/admin` 内部，不抽到共享包。
+- 不引入 Ant Design、Ant Design Pro 或其他大型后台框架。
+
+小程序：
+
+- 保留 Taro + React + TypeScript。
+- 采用 Tailwind CSS + `weapp-tailwindcss`。
+- 保留自有 Taro UI 组件，不引入额外小程序 UI 组件库。
+- 小程序 build 由开发者本地手动执行并通过微信开发者工具上传，不作为 CI 阻断项。
+
+UI 重构不得修改 API、数据库 schema 或 `packages/shared-types` 契约。
 
 ---
 
