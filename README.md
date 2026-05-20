@@ -2,7 +2,7 @@
 
 面向中小型制造工厂的轻量企业管理系统。当前阶段以考勤模块为切入点，目标是先交付单工厂考勤闭环，再逐步扩展到排班、多工厂、工资、计件、门禁和硬件集成。
 
-当前仓库状态：Phase 1 单工厂考勤 MVP 与 Phase 1.5 生产化试点任务均已完成。当前进入 Phase 1.6 试点硬化周期，重点补齐 API CI 冒烟门禁、基础可观测性、试点 Runbook 和 readiness report。
+当前仓库状态：Phase 1 单工厂考勤 MVP、Phase 1.5 生产化试点和 Phase 1.6 试点硬化任务均已完成。当前版本适合进入小范围真实试点反馈收集；Phase 2 业务扩展需基于试点反馈单独规划。
 
 ---
 
@@ -47,6 +47,7 @@ Phase 1 不包含：
 | [Phase 1.5 Pilot Deployment Runbook](docs/plan/phase-1-5-pilot-deployment-runbook.md) | 试点部署、空库初始化、demo seed 和故障定位 |
 | [Phase 1.5 Smoke Acceptance](docs/plan/phase-1-5-smoke-acceptance.md) | 端到端冒烟脚本、UI 清单和阻断条件 |
 | [Phase 1.6 Pilot Hardening Plan](docs/plan/phase-1-6-pilot-hardening-plan.md) | 试点硬化任务拆解与完成标准 |
+| [Phase 1.6 Readiness Report](docs/plan/phase-1-6-readiness-report.md) | 试点硬化验证结果、已知限制和 Phase 2 前建议 |
 
 历史文档：
 
@@ -109,13 +110,13 @@ docs/
 
 ## 6. 当前里程碑
 
-当前 Task 1-18 均已完成，Task 19-22 为 Phase 1.6 试点硬化周期：
+当前 Task 1-22 均已完成：
 
 - Task 1-11：Phase 1 单工厂考勤 MVP 与验证门禁。
 - Task 12-18：Phase 1.5 生产化试点，包括 CI、真实前端、导出任务持久化、试点部署初始化和端到端冒烟验收。
 - Task 19-22：Phase 1.6 试点硬化，包括 API CI 冒烟门禁、基础可观测性、Runbook 更新和 readiness report。
 
-Phase 1.6 不进入 Phase 2 业务开发；排班、多工厂、工资、硬件集成等新主线需等试点硬化完成后再单独规划。
+Phase 1.6 未进入 Phase 2 业务开发；排班、多工厂、工资、硬件集成等新主线需基于试点反馈再单独规划。
 
 ---
 
