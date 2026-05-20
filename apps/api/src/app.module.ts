@@ -1,6 +1,7 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, type NestModule } from '@nestjs/common';
 import { AccountModule } from './core/account';
 import { AuthModule } from './core/auth';
+import { RequestObservabilityMiddleware } from './core/observability';
 import { PermissionModule } from './core/permission';
 import { TenantModule } from './core/tenant';
 import { AttendanceModule } from './modules/attendance';
@@ -30,4 +31,8 @@ import { AppController } from './app.controller';
   ],
   controllers: [AppController],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(RequestObservabilityMiddleware).forRoutes('*');
+  }
+}
