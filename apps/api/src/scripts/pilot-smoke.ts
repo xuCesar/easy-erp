@@ -30,6 +30,14 @@ type MonthlyReport = {
   items: Array<{ employeeId: string; isFinalized: boolean }>;
 };
 
+type PaginatedData<TItem> = {
+  items: TItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
 type ReportTask = {
   taskId: string;
   status: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
@@ -115,6 +123,18 @@ async function main(): Promise<void> {
     }>('/attendance/checkin-context?date=2026-05-18', employee.accessToken);
     assert(context.attendanceGroup.id === demo.attendanceGroupId, 'group should match demo');
     assert(context.shift.id === demo.shiftId, 'shift should match demo');
+  });
+
+  await step('employee can query attendance records', async () => {
+    const records = await get<PaginatedData<{ employeeId: string }>>(
+      '/attendance/results?startDate=2026-05-01&endDate=2026-05-31&page=1&pageSize=31',
+      employee.accessToken,
+    );
+    assert(records.total >= 1, 'attendance records should include demo result');
+    assert(
+      records.items.some((item) => item.employeeId === demo.workerEmployeeId),
+      'attendance records should include demo worker',
+    );
   });
 
   await step('employee can check in with idempotency key', async () => {
