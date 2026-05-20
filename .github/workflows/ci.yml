@@ -42,13 +42,100 @@ jobs:
           DATABASE_URL: postgresql://easyerp:easyerp@localhost:5432/easyerp?schema=public
 
       - name: Typecheck
-        run: pnpm typecheck
+        run: |
+          pnpm --filter @easy-erp/shared-types typecheck
+          pnpm --filter @easy-erp/api typecheck
+          pnpm --filter @easy-erp/admin typecheck
 
       - name: Test
-        run: pnpm test
+        run: pnpm --filter @easy-erp/api test
 
       - name: Lint
-        run: pnpm lint
+        run: pnpm -r --filter @easy-erp/shared-types --filter @easy-erp/api --filter @easy-erp/admin --if-present lint
 
       - name: Build
-        run: pnpm build
+        run: |
+          pnpm --filter @easy-erp/shared-types build
+          pnpm --filter @easy-erp/api build
+          pnpm --filter @easy-erp/admin build
+
+  api-smoke:
+    name: API Pilot Smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: easyerp
+          POSTGRES_PASSWORD: easyerp
+          POSTGRES_DB: easyerp_ci_smoke
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U easyerp -d easyerp_ci_smoke"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://easyerp:easyerp@localhost:5432/easyerp_ci_smoke?schema=public
+      JWT_ACCESS_SECRET: ci-access-secret
+      JWT_REFRESH_SECRET: ci-refresh-secret
+      DEMO_ADMIN_PASSWORD: ci-demo-admin-password
+      DEMO_EMPLOYEE_PASSWORD: ci-demo-employee-password
+      PILOT_API_BASE_URL: http://127.0.0.1:3000/api/v1
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 9.15.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @easy-erp/api exec prisma generate --schema prisma/schema.prisma
+
+      - name: Deploy Prisma migrations
+        run: pnpm --filter @easy-erp/api exec prisma migrate deploy --schema prisma/schema.prisma
+
+      - name: Seed demo data
+        run: pnpm --filter @easy-erp/api seed:demo
+
+      - name: Start API
+        run: |
+          pnpm --filter @easy-erp/api exec node -r ts-node/register src/main.ts &
+          echo $! > api.pid
+
+      - name: Wait for API health
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:3000/api/v1/health; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "API did not become healthy in time."
+          exit 1
+
+      - name: Run pilot smoke
+        run: pnpm --filter @easy-erp/api smoke:pilot
+
+      - name: Stop API
+        if: always()
+        run: |
+          if [ -f api.pid ]; then
+            kill "$(cat api.pid)" || true
+          fi
