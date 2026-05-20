@@ -34,6 +34,10 @@ export default defineConfig({
         enable: true,
         config: {},
       },
+      tailwindcss: {
+        enable: true,
+        config: {},
+      },
       cssModules: {
         enable: false,
       },

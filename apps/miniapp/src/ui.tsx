@@ -12,10 +12,10 @@ export function PageShell(props: {
         <Text className="block text-[22px] font-semibold uppercase tracking-[4px] text-cockpit-accent">
           Factory ERP Lite
         </Text>
-        <Text className="mt-4 block text-[54px] font-bold leading-tight tracking-[-2px] text-white">
+        <Text className="mt-[16px] block text-[54px] font-bold leading-tight tracking-[-2px] text-white">
           {props.title}
         </Text>
-        <Text className="mt-4 block text-[26px] leading-[1.7] text-white/75">
+        <Text className="mt-[16px] block text-[26px] leading-[1.7] text-white/75">
           {props.subtitle}
         </Text>
       </View>
