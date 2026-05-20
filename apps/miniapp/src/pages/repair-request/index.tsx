@@ -23,7 +23,7 @@ export default function RepairRequestPage() {
         <Field label="目标日期" value={draft.targetDate ?? ''} placeholder="YYYY-MM-DD" onInput={(targetDate) => setDraft({ ...draft, targetDate })} />
         <PrimaryButton onClick={submit}>提交补卡</PrimaryButton>
       </Card>
-      <StatusText>{status}</StatusText>
+      <StatusText tone={status.includes('失败') ? 'danger' : status.includes('已提交') ? 'success' : 'info'}>{status}</StatusText>
     </PageShell>
   );
 }

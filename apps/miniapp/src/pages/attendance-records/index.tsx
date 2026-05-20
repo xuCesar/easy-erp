@@ -1,8 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Text, View } from '@tarojs/components';
 import type { AttendanceResultRow } from '@easy-erp/shared-types';
 import { createRuntimePages } from '../../services';
-import { Card, PageShell, StatusText } from '../../ui';
+import {
+  Card,
+  ItemMeta,
+  ItemTitle,
+  ListItem,
+  PageShell,
+  StatusBadge,
+  StatusText,
+} from '../../ui';
 
 export default function AttendanceRecordsPage() {
   const [rows, setRows] = useState<AttendanceResultRow[]>([]);
@@ -30,16 +37,29 @@ export default function AttendanceRecordsPage() {
     <PageShell title="考勤记录" subtitle="展示员工本月考勤结果，月报锁定后普通流程不可静默修改。">
       <Card>
         {rows.map((row) => (
-          <View className="listItem" key={row.id}>
-            <Text className="itemTitle">{row.date} · {row.primaryStatus}</Text>
-            <Text className="itemMeta">上班：{row.clockInAt ?? '-'}</Text>
-            <Text className="itemMeta">下班：{row.clockOutAt ?? '-'}</Text>
-            <Text className="itemMeta">锁定：{row.isFinalized ? '是' : '否'}</Text>
-          </View>
+          <ListItem key={row.id}>
+            <ItemTitle>{row.date}</ItemTitle>
+            <StatusBadge tone={statusTone(row.primaryStatus)}>{row.primaryStatus}</StatusBadge>
+            <ItemMeta>上班：{row.clockInAt ?? '-'}</ItemMeta>
+            <ItemMeta>下班：{row.clockOutAt ?? '-'}</ItemMeta>
+            <ItemMeta>锁定：{row.isFinalized ? '是' : '否'}</ItemMeta>
+          </ListItem>
         ))}
-        {rows.length === 0 && <StatusText>{status}</StatusText>}
+        {rows.length === 0 && <StatusText tone={status.includes('失败') ? 'danger' : 'info'}>{status}</StatusText>}
       </Card>
-      <StatusText>{status}</StatusText>
+      <StatusText tone={status.includes('失败') ? 'danger' : rows.length > 0 ? 'success' : 'info'}>{status}</StatusText>
     </PageShell>
   );
+}
+
+function statusTone(status: string): 'success' | 'warning' | 'danger' {
+  if (status === 'NORMAL') {
+    return 'success';
+  }
+
+  if (status === 'ABSENT') {
+    return 'danger';
+  }
+
+  return 'warning';
 }
