@@ -1,4 +1,5 @@
 import { defineConfig } from '@tarojs/cli';
+import { UnifiedWebpackPluginV5 } from 'weapp-tailwindcss/webpack';
 
 export default defineConfig({
   projectName: 'easy-erp-miniapp',
@@ -18,8 +19,22 @@ export default defineConfig({
     TARO_APP_API_BASE_URL: JSON.stringify(process.env.TARO_APP_API_BASE_URL ?? ''),
   },
   mini: {
+    webpackChain(chain) {
+      chain.merge({
+        plugin: {
+          'weapp-tailwindcss': {
+            plugin: UnifiedWebpackPluginV5,
+            args: [{ appType: 'taro' }],
+          },
+        },
+      });
+    },
     postcss: {
       pxtransform: {
+        enable: true,
+        config: {},
+      },
+      tailwindcss: {
         enable: true,
         config: {},
       },

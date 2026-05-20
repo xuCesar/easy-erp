@@ -33,7 +33,7 @@ export default function LoginPage() {
         <Field label="密码" value={form.password} placeholder="请输入密码" password onInput={(password) => setForm({ ...form, password })} />
         <PrimaryButton disabled={isSubmitting} onClick={submit}>登录</PrimaryButton>
       </Card>
-      <StatusText>{status}</StatusText>
+      <StatusText tone={status.includes('失败') ? 'danger' : status.includes('成功') ? 'success' : 'info'}>{status}</StatusText>
     </PageShell>
   );
 }

@@ -23,7 +23,7 @@ export default function LeaveRequestPage() {
         <Field label="请假小时数" value={String(draft.durationHours ?? '')} placeholder="8" onInput={(durationHours) => setDraft({ ...draft, durationHours: Number(durationHours || 0) })} />
         <PrimaryButton onClick={submit}>提交请假</PrimaryButton>
       </Card>
-      <StatusText>{status}</StatusText>
+      <StatusText tone={status.includes('失败') ? 'danger' : status.includes('已提交') ? 'success' : 'info'}>{status}</StatusText>
     </PageShell>
   );
 }
