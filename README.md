@@ -156,6 +156,12 @@ ADMIN_API_PROXY_TARGET="http://127.0.0.1:3001" pnpm --filter @easy-erp/admin dev
 pnpm --filter @easy-erp/miniapp dev:weapp
 ```
 
+真机或局域网联调时通过 `TARO_APP_API_BASE_URL` 指定后端地址，例如：
+
+```bash
+TARO_APP_API_BASE_URL="http://<your-lan-ip>:3000" pnpm --filter @easy-erp/miniapp dev:weapp
+```
+
 构建微信小程序产物：
 
 ```bash

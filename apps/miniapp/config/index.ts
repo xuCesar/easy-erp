@@ -14,6 +14,9 @@ export default defineConfig({
   framework: 'react',
   compiler: 'webpack5',
   plugins: ['@tarojs/plugin-framework-react'],
+  defineConstants: {
+    TARO_APP_API_BASE_URL: JSON.stringify(process.env.TARO_APP_API_BASE_URL ?? ''),
+  },
   mini: {
     postcss: {
       pxtransform: {
