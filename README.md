@@ -50,6 +50,7 @@ Phase 1 不包含：
 | [Phase 1.6 Pilot Hardening Plan](docs/plan/phase-1-6-pilot-hardening-plan.md) | 试点硬化任务拆解与完成标准 |
 | [Phase 1.6 Readiness Report](docs/plan/phase-1-6-readiness-report.md) | 试点硬化验证结果、已知限制和 Phase 2 前建议 |
 | [Phase 1.7 UI Brand Refresh Plan](docs/plan/phase-1-7-ui-brand-refresh-plan.md) | Tailwind-first 数据驾驶舱 UI 升级任务拆解 |
+| [Phase 1.7 UI Acceptance Checklist](docs/plan/phase-1-7-ui-acceptance-checklist.md) | Admin 与小程序 UI 验收清单、手工检查项和已知限制 |
 
 历史文档：
 
@@ -175,6 +176,8 @@ pnpm --filter @easy-erp/miniapp build
 ```
 
 小程序构建不作为 CI 阻断项。产物输出到 `apps/miniapp/dist/`，由开发者使用微信开发者工具打开该目录，完成预览、真机调试和手动上传。
+
+Phase 1.7 UI 验收清单见 [Phase 1.7 UI Acceptance Checklist](docs/plan/phase-1-7-ui-acceptance-checklist.md)。Admin 可用本地 typecheck/build 与浏览器桌面、窄屏检查验证；小程序仍由开发者本地构建，并通过微信开发者工具预览、真机调试和手动上传。
 
 ---
 

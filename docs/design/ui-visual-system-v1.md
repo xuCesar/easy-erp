@@ -140,6 +140,8 @@ Miniapp 允许新增：
 
 ## 7. 验收样例
 
+完整验收清单见 [Phase 1.7 UI Acceptance Checklist](../plan/phase-1-7-ui-acceptance-checklist.md)。
+
 Admin：
 
 - 登录前后视觉状态明确。

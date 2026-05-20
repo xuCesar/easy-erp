@@ -93,7 +93,7 @@ GitHub issue：[#52](https://github.com/xuCesar/easy-erp/issues/52)
 
 GitHub issue：[#53](https://github.com/xuCesar/easy-erp/issues/53)
 
-- 新增 UI 验收清单。
+- 新增 [Phase 1.7 UI Acceptance Checklist](phase-1-7-ui-acceptance-checklist.md)。
 - 记录 Admin 桌面/窄屏验收项。
 - 记录小程序微信开发者工具预览与真机检查项。
 - 同步 Runbook 中的小程序手动构建上传注意事项。
