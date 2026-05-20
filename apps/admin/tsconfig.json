@@ -10,6 +10,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "paths": {
+      "@/*": ["./src/*"],
       "@easy-erp/shared-types": ["../../packages/shared-types/src/index.ts"]
     }
   },
