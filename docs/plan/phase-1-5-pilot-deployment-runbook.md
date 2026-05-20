@@ -124,6 +124,12 @@ pnpm --filter @easy-erp/miniapp dev:weapp
 
 小程序产物输出到 `apps/miniapp/dist/`，可用微信开发者工具打开。
 
+小程序构建与上传由开发者手动完成，不作为 CI 阻断项。上传前建议确认：
+
+- `TARO_APP_API_BASE_URL` 指向目标试点 API 地址。
+- 已在微信开发者工具中完成预览或真机调试。
+- 登录、打卡、考勤记录、请假和补卡页面能访问试点 API。
+
 ## 6. 回滚边界
 
 - Prisma 生产迁移不做自动下滚。上线前必须先在 staging 或临时空库执行 `migrate deploy`。

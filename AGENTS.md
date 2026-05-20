@@ -312,8 +312,12 @@ DATABASE_URL="postgresql://easyerp:easyerp@localhost:5432/easyerp?schema=public"
 - Task 16：导出任务生产化，已完成。
 - Task 17：试点部署与初始化，已完成。
 - Task 18：端到端冒烟验收，已完成。
+- Task 19：Phase 1.6 文档与 issue 基线，当前阶段。
+- Task 20：API pilot smoke gate，待开始。
+- Task 21：API observability baseline，待开始。
+- Task 22：Phase 1.6 readiness report 与 Runbook 更新，待开始。
 
-Phase 1.5 生产化试点已完成，详见 `docs/plan/phase-1-5-production-pilot-plan.md`。开始 Phase 2 或新一轮试点增强前，应先基于试点反馈创建新的 GitHub issue。
+Phase 1.5 生产化试点已完成，详见 `docs/plan/phase-1-5-production-pilot-plan.md`。当前进入 Phase 1.6 试点硬化周期，详见 `docs/plan/phase-1-6-pilot-hardening-plan.md`。小程序构建不作为 CI 阻断项，由开发者本地打包并通过微信开发者工具手动上传。
 
 开始新任务前：
 

@@ -2,7 +2,7 @@
 
 面向中小型制造工厂的轻量企业管理系统。当前阶段以考勤模块为切入点，目标是先交付单工厂考勤闭环，再逐步扩展到排班、多工厂、工资、计件、门禁和硬件集成。
 
-当前仓库状态：Phase 1 单工厂考勤 MVP 与 Phase 1.5 生产化试点任务均已完成。当前能力包括可运行管理后台、可运行 Taro 小程序、GitHub Actions CI、数据库持久化月报导出任务、试点初始化 Runbook 和端到端冒烟验收脚本。
+当前仓库状态：Phase 1 单工厂考勤 MVP 与 Phase 1.5 生产化试点任务均已完成。当前进入 Phase 1.6 试点硬化周期，重点补齐 API CI 冒烟门禁、基础可观测性、试点 Runbook 和 readiness report。
 
 ---
 
@@ -46,6 +46,7 @@ Phase 1 不包含：
 | [Phase 1.5 Production Pilot Plan](docs/plan/phase-1-5-production-pilot-plan.md) | 生产化试点任务拆解与完成标准 |
 | [Phase 1.5 Pilot Deployment Runbook](docs/plan/phase-1-5-pilot-deployment-runbook.md) | 试点部署、空库初始化、demo seed 和故障定位 |
 | [Phase 1.5 Smoke Acceptance](docs/plan/phase-1-5-smoke-acceptance.md) | 端到端冒烟脚本、UI 清单和阻断条件 |
+| [Phase 1.6 Pilot Hardening Plan](docs/plan/phase-1-6-pilot-hardening-plan.md) | 试点硬化任务拆解与完成标准 |
 
 历史文档：
 
@@ -108,12 +109,13 @@ docs/
 
 ## 6. 当前里程碑
 
-当前 Task 1-18 均已完成，相关 GitHub issues 已关闭：
+当前 Task 1-18 均已完成，Task 19-22 为 Phase 1.6 试点硬化周期：
 
 - Task 1-11：Phase 1 单工厂考勤 MVP 与验证门禁。
 - Task 12-18：Phase 1.5 生产化试点，包括 CI、真实前端、导出任务持久化、试点部署初始化和端到端冒烟验收。
+- Task 19-22：Phase 1.6 试点硬化，包括 API CI 冒烟门禁、基础可观测性、Runbook 更新和 readiness report。
 
-后续进入 Phase 2 前，建议先基于试点反馈确认下一批 GitHub issues，避免把排班、多工厂、工资、硬件集成等新主线混入当前稳定化收尾。
+Phase 1.6 不进入 Phase 2 业务开发；排班、多工厂、工资、硬件集成等新主线需等试点硬化完成后再单独规划。
 
 ---
 
@@ -168,7 +170,7 @@ TARO_APP_API_BASE_URL="http://<your-lan-ip>:3000" pnpm --filter @easy-erp/miniap
 pnpm --filter @easy-erp/miniapp build
 ```
 
-产物输出到 `apps/miniapp/dist/`，可用微信开发者工具打开该目录进行预览和真机调试。
+小程序构建不作为 CI 阻断项。产物输出到 `apps/miniapp/dist/`，由开发者使用微信开发者工具打开该目录，完成预览、真机调试和手动上传。
 
 ---
 
