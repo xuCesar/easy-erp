@@ -1,5 +1,5 @@
 import Taro from '@tarojs/taro';
-import type { MiniappRuntime } from './pages';
+import type { MiniappRuntime } from './shared/runtime/types';
 
 export function createTaroRuntime(): MiniappRuntime {
   const system = Taro.getSystemInfoSync();

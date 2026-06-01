@@ -1,11 +1,5 @@
 import type { ApiResponse, ApiSuccessResponse } from '@easy-erp/shared-types';
 
-export interface MiniappRuntime {
-  now(): string;
-  idempotencyKey(action: string): string;
-  deviceId?: string;
-}
-
 export interface MiniappFeedback {
   type: 'success' | 'error' | 'permission-denied' | 'network-retry';
   message: string;
@@ -31,10 +25,15 @@ export async function requestData<TData>(request: Promise<ApiResponse<TData>>): 
     return (response as ApiSuccessResponse<TData>).data;
   }
 
-  throw new MiniappApiError(response as Exclude<ApiResponse<unknown>, ApiSuccessResponse<unknown>>);
+  throw new MiniappApiError(
+    response as Exclude<ApiResponse<unknown>, ApiSuccessResponse<unknown>>,
+  );
 }
 
-export async function withNetworkRetry<TData>(operation: () => Promise<TData>, attempts = 2): Promise<TData> {
+export async function withNetworkRetry<TData>(
+  operation: () => Promise<TData>,
+  attempts = 2,
+): Promise<TData> {
   let lastError: unknown;
 
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
@@ -70,21 +69,4 @@ export function toMiniappFeedback(error: unknown): MiniappFeedback {
   }
 
   return { type: 'error', message: '操作失败，请稍后重试。' };
-}
-
-export function isoDate(value: string): string {
-  return value.slice(0, 10);
-}
-
-export function buildQuery(params: Record<string, string | number | boolean | null | undefined>): string {
-  const search = new URLSearchParams();
-
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
-      search.set(key, String(value));
-    }
-  });
-
-  const query = search.toString();
-  return query ? `?${query}` : '';
 }

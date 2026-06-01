@@ -1,5 +1,13 @@
-import type { ApiClient, ApiResponse, CheckinContext, CheckinResult } from '@easy-erp/shared-types';
-import { createMiniappPages } from './index';
+import type {
+  ApiClient,
+  ApiResponse,
+  ApprovalItem,
+  CheckinContext,
+  CheckinResult,
+  EmployeeProfileSummary,
+  PaginatedData,
+} from '@easy-erp/shared-types';
+import { createMiniappPages } from '../features';
 
 let postCount = 0;
 
@@ -17,6 +25,28 @@ const client: ApiClient = {
           attendanceGroup: { id: 'group-1', name: '生产一组考勤', checkinMethods: ['GPS'], requirePhoto: false },
           status: { clockInAt: null, clockOutAt: null, nextAction: 'CLOCK_IN' },
         }
+      : path.includes('/profile')
+        ? {
+            user: { id: 'user-1', tenantId: 'tenant-1', employeeId: 'employee-1', roles: ['EMPLOYEE'] },
+            employee: {
+              id: 'employee-1',
+              factoryId: 'factory-1',
+              orgUnitId: 'org-1',
+              empNo: 'E001',
+              name: '张三',
+              phone: '13800000000',
+              entryDate: '2026-05-01',
+              status: 'ACTIVE',
+            },
+          } satisfies EmployeeProfileSummary
+      : path.includes('/leave/requests') || path.includes('/repair/requests')
+        ? {
+            items: [],
+            total: 0,
+            page: 1,
+            pageSize: 50,
+            totalPages: 0,
+          } satisfies PaginatedData<ApprovalItem>
       : {}) as TData,
     ),
   post: <TData>() => {
@@ -52,6 +82,7 @@ pages.records.search({ startDate: '2026-05-01', endDate: '2026-05-31' });
 pages.leaveRequest.submit({ leaveType: 'PERSONAL', reason: '个人事务' });
 pages.repairRequest.submit({ repairType: 'CLOCK_OUT', reason: '下班忘记打卡' });
 pages.profile.load();
+pages.requests.load();
 
 void context;
 void result;

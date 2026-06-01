@@ -1,5 +1,5 @@
 import type { ApiClient, LoginRequest, LoginResponse } from '@easy-erp/shared-types';
-import { requestData } from './common';
+import { requestData } from '../../shared/api/response';
 
 export function createLoginPage(client: ApiClient) {
   return {

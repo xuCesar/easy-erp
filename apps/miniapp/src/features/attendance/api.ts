@@ -1,10 +1,13 @@
 import type {
   ApiClient,
+  AttendanceResultQuery,
+  AttendanceResultRow,
   CheckinContext,
   CheckinRequest,
   CheckinResult,
   CheckinType,
   GeoLocationPayload,
+  PaginatedData,
   WifiPayload,
 } from '@easy-erp/shared-types';
 import {
@@ -12,8 +15,9 @@ import {
   toMiniappFeedback,
   withNetworkRetry,
   type MiniappFeedback,
-  type MiniappRuntime,
-} from './common';
+} from '../../shared/api/response';
+import type { MiniappRuntime } from '../../shared/runtime/types';
+import { buildQuery } from '../../shared/utils/query';
 
 export interface CheckinSubmitInput {
   checkinType: CheckinType;
@@ -48,17 +52,21 @@ export function createCheckinPage(client: ApiClient, runtime: MiniappRuntime) {
 
       pendingSubmit = withNetworkRetry(() =>
         requestData(client.post<CheckinResult, CheckinRequest>('/api/v1/attendance/checkin', body)),
-      ).then((result) => {
-        lastResult = result;
-        return result;
-      }).finally(() => {
-        pendingSubmit = null;
-      });
+      )
+        .then((result) => {
+          lastResult = result;
+          return result;
+        })
+        .finally(() => {
+          pendingSubmit = null;
+        });
 
       return pendingSubmit;
     },
 
-    async submitSafely(input: CheckinSubmitInput): Promise<{ result: CheckinResult | null; feedback: MiniappFeedback }> {
+    async submitSafely(
+      input: CheckinSubmitInput,
+    ): Promise<{ result: CheckinResult | null; feedback: MiniappFeedback }> {
       try {
         const result = await this.submit(input);
         return { result, feedback: { type: 'success', message: result.message } };
@@ -69,6 +77,31 @@ export function createCheckinPage(client: ApiClient, runtime: MiniappRuntime) {
 
     getLastResult(): CheckinResult | null {
       return lastResult;
+    },
+  };
+}
+
+export function createCheckinResultPage(getLastResult: () => CheckinResult | null) {
+  return {
+    load(): CheckinResult | null {
+      return getLastResult();
+    },
+  };
+}
+
+export function createAttendanceRecordsPage(client: ApiClient) {
+  return {
+    search(
+      query: Pick<
+        AttendanceResultQuery,
+        'startDate' | 'endDate' | 'page' | 'pageSize'
+      >,
+    ): Promise<PaginatedData<AttendanceResultRow>> {
+      return requestData(
+        client.get<PaginatedData<AttendanceResultRow>>(
+          `/api/v1/attendance/results${buildQuery(query)}`,
+        ),
+      );
     },
   };
 }

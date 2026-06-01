@@ -5,8 +5,8 @@ import type {
   ApiResponse,
   LoginResponse,
 } from '@easy-erp/shared-types';
-
-const sessionKey = 'easy-erp-miniapp-session';
+import { STORAGE_KEYS } from '../shared/constants/app';
+import { getErrorMessage } from '../shared/utils/error';
 
 export interface MiniappSession {
   accessToken: string;
@@ -56,6 +56,7 @@ export class TaroApiClient implements ApiClient {
     const session = this.getSession();
     const header: Record<string, string> = {
       Accept: 'application/json',
+      'Content-Type': 'application/json; charset=utf-8',
       ...options?.headers,
     };
 
@@ -63,12 +64,30 @@ export class TaroApiClient implements ApiClient {
       header.Authorization = `Bearer ${session.accessToken}`;
     }
 
-    const response = await Taro.request<ApiResponse<TData>>({
+    const requestOptions = {
       url: `${this.baseUrl}${path}`,
       method,
       data: body,
       header,
-    });
+      dataType: 'json' as const,
+      timeout: 15000,
+    };
+
+    let response;
+
+    try {
+      response = await Taro.request<ApiResponse<TData>>(requestOptions);
+    } catch (error) {
+      throw new Error(getErrorMessage(error, '网络请求失败，请检查网络或接口地址。'));
+    }
+
+    if (!response || typeof response.statusCode !== 'number' || response.statusCode >= 400) {
+      throw new Error(`请求失败：${response?.statusCode ?? '未知状态码'}`);
+    }
+
+    if (response.data == null) {
+      throw new Error('接口返回数据为空，请检查服务端响应。');
+    }
 
     return response.data;
   }
@@ -86,14 +105,18 @@ export function createSession(response: LoginResponse): MiniappSession {
 }
 
 export function saveSession(session: MiniappSession): void {
-  Taro.setStorageSync(sessionKey, session);
+  Taro.setStorageSync(STORAGE_KEYS.session, session);
 }
 
 export function loadSession(): MiniappSession | null {
-  const session = Taro.getStorageSync<MiniappSession | ''>(sessionKey);
+  const session = Taro.getStorageSync<MiniappSession | ''>(STORAGE_KEYS.session);
   return session && typeof session.accessToken === 'string' ? session : null;
 }
 
+export function isSessionActive(session: MiniappSession | null): session is MiniappSession {
+  return Boolean(session && Number.isFinite(session.expiresAt) && session.expiresAt > Date.now());
+}
+
 export function clearSession(): void {
-  Taro.removeStorageSync(sessionKey);
+  Taro.removeStorageSync(STORAGE_KEYS.session);
 }

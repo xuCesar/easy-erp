@@ -3,14 +3,17 @@ import {
   Body,
   Controller,
   ForbiddenException,
+  Get,
   Param,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { AccessTokenGuard, type AuthPrincipal } from '../../core/auth';
 import { PermissionGuard, RequirePermission } from '../../core/permission';
+import type { PublicApprovalStatus } from '../approval-view.types';
 import { LeaveService } from './leave.service';
 import type { CreateLeaveRequestInput } from './leave.repository';
 
@@ -22,6 +25,31 @@ type AuthenticatedRequest = {
 @UseGuards(AccessTokenGuard, PermissionGuard)
 export class LeaveController {
   constructor(private readonly leaveService: LeaveService) {}
+
+  @Get()
+  @RequirePermission('leave:request:view')
+  async list(
+    @Req() req: AuthenticatedRequest,
+    @Query('factoryId') factoryId?: string,
+    @Query('orgUnitId') orgUnitId?: string,
+    @Query('status') status?: PublicApprovalStatus,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ): Promise<unknown> {
+    if (!factoryId) {
+      throw new BadRequestException('factoryId is required.');
+    }
+
+    return ok(
+      await this.leaveService.list(req.user, {
+        factoryId,
+        orgUnitId: orgUnitId ?? null,
+        status,
+        page: toOptionalNumber(page),
+        pageSize: toOptionalNumber(pageSize),
+      }),
+    );
+  }
 
   @Post()
   @RequirePermission('leave:request:create')
@@ -91,6 +119,10 @@ function assertCreateBody(body: LeaveRequestBody): void {
   if (!body?.factoryId || !body.leaveType || !body.startAt || !body.endAt) {
     throw new BadRequestException('Invalid leave request.');
   }
+}
+
+function toOptionalNumber(value: string | undefined): number | undefined {
+  return value ? Number(value) : undefined;
 }
 
 function ok<T>(

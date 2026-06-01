@@ -1,17 +1,19 @@
+import { APP_PAGES, RouteName, TAB_BAR_PAGES, routePath } from './constants/routes';
+
 export default defineAppConfig({
-  pages: [
-    'pages/login/index',
-    'pages/checkin/index',
-    'pages/checkin-result/index',
-    'pages/attendance-records/index',
-    'pages/leave-request/index',
-    'pages/repair-request/index',
-    'pages/profile/index',
-  ],
+  entryPagePath: routePath(RouteName.LOGIN),
+  pages: APP_PAGES.map(routePath),
+  tabBar: {
+    color: '#667085',
+    selectedColor: '#4f46f5',
+    backgroundColor: '#ffffff',
+    borderStyle: 'white',
+    list: TAB_BAR_PAGES.map((item) => ({ ...item })),
+  },
   window: {
     backgroundTextStyle: 'light',
-    navigationBarBackgroundColor: '#173f35',
+    navigationBarBackgroundColor: '#ffffff',
     navigationBarTitleText: 'Factory ERP Lite',
-    navigationBarTextStyle: 'white',
+    navigationBarTextStyle: 'black',
   },
 });
