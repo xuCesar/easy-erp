@@ -1,7 +1,7 @@
 import Taro from '@tarojs/taro';
-import type { MiniappRuntime } from './shared/runtime/types';
+import type { RuntimeAdapter } from '../shared/runtime/types';
 
-export function createTaroRuntime(): MiniappRuntime {
+export function createTaroRuntime(): RuntimeAdapter {
   const system = Taro.getSystemInfoSync();
   const deviceId = `${system.brand ?? 'unknown'}:${system.model}`;
 

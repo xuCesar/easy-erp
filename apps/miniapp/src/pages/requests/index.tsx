@@ -3,7 +3,7 @@ import { Text, View } from '@tarojs/components';
 import { useDidShow } from '@tarojs/taro';
 import type { ApprovalItem, ApprovalStatus } from '@easy-erp/shared-types';
 import { CalendarDays, RotateCcw, Search } from 'lucide-react-taro';
-import { createRuntimePages } from '../../services';
+import { createRuntimeServices } from '../../services';
 import { MiniButton, MiniCard, MiniEmpty, MiniEmptyNotice, MiniHeader, MiniIcon, MiniPage, MiniStatus } from '../../components';
 import { RouteName } from '../../constants/routes';
 import { useAuthGuard } from '../../hooks/useAuthGuard';
@@ -30,7 +30,7 @@ export default function RequestsPage() {
     clearNotice();
 
     try {
-      const nextItems = await createRuntimePages().requests.load();
+      const nextItems = await createRuntimeServices().requests.load();
       setItems(nextItems);
     } catch (error) {
       showError(error, '申请列表加载失败。', '无法读取申请');
@@ -114,13 +114,15 @@ function RequestCard(props: { item: ApprovalItem }) {
       <View className="flex items-start gap-[22px]">
         <MiniIcon icon={TypeIcon} tone={item.type === 'LEAVE' ? 'primary' : 'warning'} />
         <View className="min-w-0 flex-1">
-          <Text className="block text-[31px] font-extrabold text-[#07112f]">{item.employeeName}</Text>
-          <Text className="mt-[8px] block text-[28px] font-semibold text-[#07112f]">
+          <Text className="block truncate text-[31px] font-extrabold text-[#07112f]">{item.employeeName}</Text>
+          <Text className="mt-[10px] block text-[28px] font-semibold text-[#07112f]">
             {item.type === 'LEAVE' ? '请假申请' : '补卡申请'}
           </Text>
-          <Text className="mt-[18px] block text-[27px] text-[#667085]">{requestTimeText(item)}</Text>
+          <Text className="mt-[18px] block text-[27px] leading-[1.35] text-[#667085]">{requestTimeText(item)}</Text>
         </View>
-        <MiniStatus tone={statusTone(item.status)}>{statusLabel(item.status)}</MiniStatus>
+        <View className="shrink-0">
+          <MiniStatus tone={statusTone(item.status)}>{statusLabel(item.status)}</MiniStatus>
+        </View>
       </View>
     </MiniCard>
   );
@@ -136,9 +138,9 @@ function statusLabel(status: ApprovalStatus): string {
   return labels[status];
 }
 
-function statusTone(status: ApprovalStatus): 'primary' | 'warning' | 'danger' {
+function statusTone(status: ApprovalStatus): 'primary' | 'success' | 'warning' | 'danger' {
   if (status === 'APPROVED') {
-    return 'primary';
+    return 'success';
   }
 
   if (status === 'REJECTED') {

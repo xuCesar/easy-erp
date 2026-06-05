@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Text, View } from '@tarojs/components';
 import type { RepairRequestDraft, RepairType } from '@easy-erp/shared-types';
-import { createRuntimePages } from '../../services';
+import { createRuntimeServices } from '../../services';
 import { AttachmentUploadPlaceholder, CardSelectRow, MiniButton, MiniField, MiniHeader, MiniNoticePanel, MiniPage } from '../../components';
 import { RouteName } from '../../constants/routes';
 import { useAuthGuard } from '../../hooks/useAuthGuard';
@@ -23,7 +23,7 @@ export default function RepairRequestPage() {
     startSubmitting('正在提交补卡申请...');
 
     try {
-      await createRuntimePages().repairRequest.submit(draft);
+      await createRuntimeServices().repairRequest.submit(draft);
       submitSucceeded('补卡申请已提交。');
       await switchTab(RouteName.REQUESTS);
     } catch (error) {
@@ -60,7 +60,9 @@ export default function RepairRequestPage() {
         <AttachmentUploadPlaceholder />
 
         {notice ? <MiniNoticePanel notice={notice} /> : null}
+      </View>
 
+      <View className="mt-[34px]">
         <MiniButton disabled={isSubmitting || !draft.reason || !draft.targetDate} onClick={submit}>
           {isSubmitting ? '提交中...' : '提交申请'}
         </MiniButton>

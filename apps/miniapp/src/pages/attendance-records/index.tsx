@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Text, View } from '@tarojs/components';
 import type { AttendanceResultRow } from '@easy-erp/shared-types';
-import { createRuntimePages } from '../../services';
+import { createRuntimeServices } from '../../services';
 import { MetricStat, MiniCard, MiniEmptyNotice, MiniHeader, MiniPage, MiniStatus } from '../../components';
 import { useAuthGuard } from '../../hooks/useAuthGuard';
 import { usePageNotice } from '../../hooks/usePageNotice';
@@ -26,7 +26,7 @@ export default function AttendanceRecordsPage() {
     showMuted('正在读取本月考勤记录...', '正在加载');
 
     try {
-      const result = await createRuntimePages().records.search({ startDate, endDate, page: 1, pageSize: 31 });
+      const result = await createRuntimeServices().attendanceRecords.search({ startDate, endDate, page: 1, pageSize: 31 });
       setRows(result.items);
       if (result.items.length > 0) {
         clearNotice();

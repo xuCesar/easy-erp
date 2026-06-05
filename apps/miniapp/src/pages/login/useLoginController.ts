@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import Taro from '@tarojs/taro';
 import type { LoginRequest } from '@easy-erp/shared-types';
-import { createRuntimePages } from '../../services';
-import { createSession, saveSession } from '../../api/client';
+import { createSession, saveSession } from '../../api';
+import { createRuntimeServices } from '../../services';
 import { RouteName } from '../../constants/routes';
 import { switchTab } from '../../router';
-import { getErrorMessage } from '../../shared/utils/error';
+import { getErrorMessage } from '../../api';
 
 export type LoginMethod = 'account' | 'sms';
 export type SubmitAction = LoginMethod | 'wechat';
@@ -64,7 +64,7 @@ export function useLoginController() {
     showStatus('info', '正在登录...');
 
     try {
-      const result = await createRuntimePages().login.submit(request);
+      const result = await createRuntimeServices().auth.submit(request);
       saveSession(createSession(result));
       showStatus('success', '登录成功。');
       await switchTab(RouteName.HOME);

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Text, View } from '@tarojs/components';
 import type { LeaveRequestDraft, LeaveType } from '@easy-erp/shared-types';
-import { createRuntimePages } from '../../services';
+import { createRuntimeServices } from '../../services';
 import { AttachmentUploadPlaceholder, CardSelectRow, InlineSelectRow, MiniButton, MiniCard, MiniField, MiniHeader, MiniNoticePanel, MiniPage } from '../../components';
 import { RouteName } from '../../constants/routes';
 import { useAuthGuard } from '../../hooks/useAuthGuard';
@@ -23,7 +23,7 @@ export default function LeaveRequestPage() {
     startSubmitting('正在提交请假申请...');
 
     try {
-      await createRuntimePages().leaveRequest.submit(draft);
+      await createRuntimeServices().leaveRequest.submit(draft);
       submitSucceeded('请假申请已提交。');
       await switchTab(RouteName.REQUESTS);
     } catch (error) {
@@ -63,7 +63,9 @@ export default function LeaveRequestPage() {
         <AttachmentUploadPlaceholder />
 
         {notice ? <MiniNoticePanel notice={notice} /> : null}
+      </View>
 
+      <View className="mt-[34px]">
         <MiniButton disabled={isSubmitting || !draft.durationHours} onClick={submit}>
           {isSubmitting ? '提交中...' : '提交申请'}
         </MiniButton>

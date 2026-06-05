@@ -16,4 +16,10 @@ export default defineAppConfig({
     navigationBarTitleText: 'Factory ERP Lite',
     navigationBarTextStyle: 'black',
   },
+  permission: {
+    'scope.userLocation': {
+      desc: '用于获取当前位置，完成考勤打卡范围校验。',
+    },
+  },
+  requiredPrivateInfos: ['getLocation'],
 });

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { PageNotice } from '../shared/types/page-notice';
+import type { PageNotice } from '../shared/types/pageNotice';
 import { usePageNotice } from './usePageNotice';
 
 export function useSubmitState(initialNotice: PageNotice | null = null) {

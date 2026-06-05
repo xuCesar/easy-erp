@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react-taro';
 import type { IconProps } from 'lucide-react-taro';
 import { RouteName } from '../constants/routes';
 import { navigateBack, switchTab } from '../router';
-import type { PageNoticeTone } from '../shared/types/page-notice';
+import type { PageNoticeTone } from '../shared/types/pageNotice';
 
 export type MiniIconComponent = React.ComponentType<IconProps>;
 
@@ -26,7 +26,7 @@ const iconToneColor: Record<PageNoticeTone, string> = {
 export function MiniPage(props: { children: React.ReactNode; compact?: boolean }) {
   return (
     <View
-      className={`box-border min-h-screen bg-[#fbfcff] px-[32px] text-[#07112f] ${props.compact ? 'pb-[48px]' : 'pb-[132px]'} pt-[34px]`}
+      className={`box-border min-h-screen bg-[#fbfcff] px-[32px] text-[#07112f] ${props.compact ? 'pb-[72px]' : 'pb-[168px]'} pt-[78px]`}
     >
       {props.children}
     </View>
@@ -40,12 +40,12 @@ export function MiniHeader(props: {
   back?: boolean;
 }) {
   return (
-    <View className="mb-[30px]">
+    <View className="mb-[32px]">
       <View className="flex h-[72px] items-center justify-between">
         <View className="flex min-w-0 flex-1 items-center gap-[18px]">
           {props.back ? (
             <View
-              className="flex h-[60px] w-[60px] items-center justify-center rounded-full bg-white"
+              className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-full bg-white"
               onClick={goBackSafely}
             >
               <ChevronLeft color="#07112f" size={34} strokeWidth={2.1} />
@@ -69,7 +69,7 @@ export function MiniHeader(props: {
 export function MiniCard(props: { children: React.ReactNode; className?: string }) {
   return (
     <View
-      className={`box-border rounded-[28px] border border-[#edf0f7] bg-white p-[28px] shadow-[0_18px_55px_rgba(25,35,76,0.08)] ${props.className ?? ''}`}
+      className={`box-border rounded-[28px] border border-[#edf0f7] bg-white p-[28px] shadow-[0_18px_55px_rgba(25,35,76,0.06)] ${props.className ?? ''}`}
     >
       {props.children}
     </View>
@@ -124,7 +124,7 @@ export function MiniButton(props: {
 
   return (
     <Button
-      className={`primaryButton flex h-[96px] box-border items-center justify-center rounded-[24px] border-0 px-[28px] text-[30px] font-extrabold leading-[96px] ${variantClass} ${props.disabled ? 'opacity-55' : ''} ${props.className ?? ''}`}
+      className={`miniButton primaryButton flex h-[96px] box-border items-center justify-center rounded-[24px] border-0 px-[28px] text-[30px] font-extrabold leading-[96px] ${variantClass} ${props.disabled ? 'opacity-55' : ''} ${props.className ?? ''}`}
       disabled={props.disabled}
       onClick={props.onClick}
     >
@@ -142,10 +142,10 @@ export function MiniField(props: {
   onInput: (value: string) => void;
 }) {
   return (
-    <View className="mb-[22px]">
-      <Text className="mb-[12px] block text-[26px] font-bold text-[#07112f]">{props.label}</Text>
+    <View className="mb-[22px] rounded-[24px] border border-[#edf0f7] bg-white px-[26px] py-[18px] shadow-[0_14px_38px_rgba(25,35,76,0.045)]">
+      <Text className="mb-[10px] block text-[26px] font-bold text-[#07112f]">{props.label}</Text>
       <Input
-        className="input box-border h-[92px] rounded-[24px] border border-[#e4e8f2] bg-white px-[26px] text-[29px] text-[#07112f]"
+        className="input box-border h-[58px] min-w-0 bg-white text-[28px] leading-[58px] text-[#07112f]"
         password={props.password}
         type={props.type ?? 'text'}
         value={props.value}
@@ -167,7 +167,7 @@ export function MiniStatus(props: { children: React.ReactNode; tone?: PageNotice
 
   return (
     <Text
-      className={`inline-block rounded-[14px] px-[16px] py-[8px] text-[23px] font-bold ${toneClass[props.tone ?? 'muted']}`}
+      className={`inline-block whitespace-nowrap rounded-[14px] px-[16px] py-[8px] text-[23px] font-bold leading-[1.2] ${toneClass[props.tone ?? 'muted']}`}
     >
       {props.children}
     </Text>

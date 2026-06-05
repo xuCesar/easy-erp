@@ -1,33 +1,21 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Text, View } from '@tarojs/components';
-import Taro from '@tarojs/taro';
 import type { CheckinContext, EmployeeProfileSummary } from '@easy-erp/shared-types';
-import {
-  CalendarDays,
-  CircleCheckBig,
-  ClipboardCheck,
-  Navigation,
-  RotateCcw,
-  Search,
-} from 'lucide-react-taro';
-import { createRuntimePages } from '../../services';
+import { Bell, CalendarDays, CircleCheckBig, ClipboardCheck, Navigation, RotateCcw } from 'lucide-react-taro';
+import { createRuntimeServices } from '../../services';
+import { toastInfo } from '../../feedback';
 import {
   Chevron,
-  MiniCard,
   MiniEmpty,
   MiniHeader,
-  MiniIcon,
   MiniPage,
-  MiniSectionTitle,
-  MiniStatus,
-  MetricStat,
   type MiniIconComponent,
 } from '../../components';
 import { RouteName } from '../../constants/routes';
 import { useAuthGuard } from '../../hooks/useAuthGuard';
 import { navigateTo } from '../../router';
 import { formatWeekdayDate } from '../../shared/utils/date';
-import { getErrorMessage } from '../../shared/utils/error';
+import { getErrorMessage } from '../../api';
 
 type HomeState = {
   profile: EmployeeProfileSummary | null;
@@ -54,9 +42,9 @@ export default function HomePage() {
     setState((current) => ({ ...current, isLoading: true, error: '' }));
 
     try {
-      const pages = createRuntimePages();
-      const profile = await pages.profile.load();
-      const checkin = profile.employee ? await pages.checkin.loadContext() : null;
+      const services = createRuntimeServices();
+      const profile = await services.profile.load();
+      const checkin = profile.employee ? await services.checkin.loadContext() : null;
       setState({ profile, checkin, error: '', isLoading: false });
     } catch (error) {
       setState((current) => ({
@@ -72,34 +60,33 @@ export default function HomePage() {
 
   return (
     <MiniPage>
-      <MiniHeader
-        title="工作台"
-        right={<Search color="#07112f" size={30} strokeWidth={1.9} />}
-      />
+      <MiniHeader title="工作台" right={<Bell color="#07112f" size={32} strokeWidth={1.9} />} />
 
-      <View className="mb-[30px]">
-        <Text className="block text-[38px] font-extrabold text-[#07112f]">
+      <View className="mb-[34px]">
+        <Text className="block text-[38px] font-extrabold leading-[1.25] text-[#07112f]">
           你好，{employee?.name ?? '员工'}
         </Text>
-        <Text className="mt-[8px] block text-[27px] text-[#667085]">今天是 {todayText}</Text>
+        <Text className="mt-[10px] block text-[27px] leading-[1.35] text-[#667085]">
+          今天是 {todayText}
+        </Text>
       </View>
 
       {state.isLoading ? (
-        <MiniCard className="mb-[24px]">
+        <HomeCard className="mb-[24px]">
           <Text className="block text-[28px] font-bold text-[#667085]">正在同步今日考勤状态...</Text>
-        </MiniCard>
+        </HomeCard>
       ) : null}
 
       {state.error ? (
-        <MiniCard className="mb-[24px]">
+        <HomeCard className="mb-[24px]">
           <MiniEmpty title="加载失败" description={state.error} />
-        </MiniCard>
+        </HomeCard>
       ) : null}
 
       {!state.isLoading && !employee ? (
-        <MiniCard className="mb-[24px]">
+        <HomeCard className="mb-[24px]">
           <MiniEmpty title="未绑定员工档案" description="当前账号还没有员工档案，打卡和申请暂不可用。" />
-        </MiniCard>
+        </HomeCard>
       ) : null}
 
       {employee ? <TodayStatusCard context={state.checkin} /> : null}
@@ -116,26 +103,26 @@ function TodayStatusCard(props: { context: CheckinContext | null }) {
   const nextAction = props.context?.status.nextAction;
 
   return (
-    <MiniCard className="mb-[26px]" >
-      <Text className="block text-[26px] font-bold text-[#667085]">今日考勤状态</Text>
+    <HomeCard className="mb-[30px]">
+      <Text className="block text-[26px] font-bold leading-[1.25] text-[#667085]">今日考勤状态</Text>
       <View
-        className="mt-[28px] flex items-center gap-[28px]"
+        className="mt-[24px] flex items-center gap-[26px]"
         onClick={() => navigateTo(RouteName.CHECKIN)}
       >
-        <View className="flex h-[86px] w-[86px] items-center justify-center rounded-full bg-[#5b55ff] shadow-[0_16px_38px_rgba(91,85,255,0.28)]">
-          <CircleCheckBig color="#ffffff" size={40} strokeWidth={2.1} />
+        <View className="flex h-[92px] w-[92px] shrink-0 items-center justify-center rounded-full bg-[#5b55ff] shadow-[0_18px_42px_rgba(91,85,255,0.22)]">
+          <CircleCheckBig color="#ffffff" size={70} strokeWidth={1.9} />
         </View>
         <View className="min-w-0 flex-1">
-          <Text className="block text-[42px] font-extrabold text-[#07112f]">
+          <Text className="block text-[40px] font-extrabold leading-[1.18] text-[#07112f]">
             {completed ? '已打卡' : nextAction === 'CLOCK_OUT' ? '待下班打卡' : '待上班打卡'}
           </Text>
-          <Text className="mt-[8px] block text-[28px] text-[#667085]">
+          <Text className="mt-[10px] block text-[28px] leading-[1.25] text-[#667085]">
             上班 {clockInAt ?? '--:--'}
           </Text>
         </View>
         <Chevron />
       </View>
-    </MiniCard>
+    </HomeCard>
   );
 }
 
@@ -148,24 +135,22 @@ function ShortcutGrid() {
   ];
 
   return (
-    <View className="mb-[32px] grid grid-cols-4 gap-[18px]">
+    <View className="mb-[34px] grid grid-cols-4 gap-[18px] px-[2px]">
       {shortcuts.map((item) => (
         <View
           key={item.title}
-          className="items-center"
+          className="flex flex-col items-center"
           onClick={() => {
             if (item.routeName) {
               navigateTo(item.routeName);
               return;
             }
 
-            Taro.showToast({ title: '外出申请待接入', icon: 'none' });
+            toastInfo('外出申请待接入');
           }}
         >
-          <View className="mx-auto">
-            <MiniIcon icon={item.icon} />
-          </View>
-          <Text className="mt-[14px] block text-center text-[26px] font-bold text-[#07112f]">{item.title}</Text>
+          <HomeShortcutIcon icon={item.icon} />
+          <Text className="mt-[16px] block text-center text-[26px] font-bold leading-[1.2] text-[#07112f]">{item.title}</Text>
         </View>
       ))}
     </View>
@@ -174,34 +159,69 @@ function ShortcutGrid() {
 
 function ShiftCard(props: { context: CheckinContext | null }) {
   return (
-    <MiniCard className="mb-[26px]" >
+    <HomeCard className="mb-[26px]">
       <View className="flex items-center justify-between gap-[20px]">
-        <View>
-          <Text className="block text-[27px] font-bold text-[#07112f]">我的班次</Text>
-          <Text className="mt-[22px] block text-[33px] font-extrabold text-[#07112f]">
+        <View className="min-w-0 flex-1">
+          <Text className="block text-[29px] font-extrabold leading-[1.25] text-[#07112f]">我的班次</Text>
+          <Text className="mt-[20px] block text-[36px] font-extrabold leading-[1.18] text-[#07112f]">
             {props.context?.shift.startTime ?? '09:00'} - {props.context?.shift.endTime ?? '18:00'}
-            <Text className="text-[25px] font-medium text-[#667085]"> （8小时）</Text>
+            <Text className="text-[26px] font-semibold text-[#667085]"> （8小时）</Text>
           </Text>
-          <Text className="mt-[18px] block text-[26px] text-[#667085]">
+          <Text className="mt-[18px] block text-[26px] leading-[1.3] text-[#667085]">
             {props.context?.attendanceGroup.name ?? '生产一组'} · {props.context?.shift.name ?? '上午班'}
           </Text>
         </View>
         <Chevron />
       </View>
-    </MiniCard>
+    </HomeCard>
   );
 }
 
 function MonthlySummary() {
   return (
-    <MiniCard>
-      <MiniSectionTitle title="本月摘要" />
-      <View className="grid grid-cols-4 gap-[8px]">
-        <MetricStat value="20" label="出勤天数" tone="primary" valueClassName="text-[34px]" labelClassName="text-[22px]" />
-        <MetricStat value="2" label="迟到次数" tone="warning" valueClassName="text-[34px]" labelClassName="text-[22px]" />
-        <MetricStat value="1" label="请假天数" tone="primary" valueClassName="text-[34px]" labelClassName="text-[22px]" />
-        <MetricStat value="160" label="工时(小时)" tone="muted" valueClassName="text-[34px]" labelClassName="text-[22px]" />
+    <HomeCard>
+      <Text className="block text-[30px] font-extrabold leading-[1.2] text-[#07112f]">本月摘要</Text>
+      <View className="mt-[26px] grid grid-cols-4 gap-[8px]">
+        <HomeMetric value="20" label="出勤天数" tone="primary" />
+        <HomeMetric value="2" label="迟到次数" tone="warning" />
+        <HomeMetric value="1" label="请假天数" tone="primary" />
+        <HomeMetric value="160" label="工时(小时)" tone="muted" />
       </View>
-    </MiniCard>
+    </HomeCard>
+  );
+}
+
+function HomeCard(props: { children: React.ReactNode; className?: string }) {
+  return (
+    <View
+      className={`box-border rounded-[28px] bg-white px-[28px] py-[30px] shadow-[0_22px_58px_rgba(25,35,76,0.07)] ${props.className ?? ''}`}
+    >
+      {props.children}
+    </View>
+  );
+}
+
+function HomeShortcutIcon(props: { icon: MiniIconComponent }) {
+  const Icon = props.icon;
+
+  return (
+    <View className="mx-auto flex h-[72px] w-[72px] items-center justify-center rounded-[22px] bg-[#5b55ff] shadow-[0_16px_34px_rgba(91,85,255,0.22)]">
+      <Icon color="#ffffff" size={34} strokeWidth={2} />
+    </View>
+  );
+}
+
+function HomeMetric(props: { value: string; label: string; tone: 'primary' | 'warning' | 'muted' }) {
+  const valueColor = props.tone === 'warning' ? 'text-[#f97316]' : props.tone === 'muted' ? 'text-[#07112f]' : 'text-[#5b55ff]';
+
+  return (
+    <View className="flex flex-col items-center">
+      <Text className={`block text-center text-[34px] font-extrabold leading-[1.12] ${valueColor}`}>
+        {props.value}
+      </Text>
+      <Text className="mt-[14px] block text-center text-[22px] font-semibold leading-[1.2] text-[#667085]">
+        {props.label}
+      </Text>
+    </View>
   );
 }

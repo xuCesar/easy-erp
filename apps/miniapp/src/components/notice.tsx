@@ -1,5 +1,5 @@
 import { Text, View } from '@tarojs/components';
-import type { PageNotice, PageNoticeTone } from '../shared/types/page-notice';
+import type { PageNotice, PageNoticeTone } from '../shared/types/pageNotice';
 import { MiniEmpty } from './mobile';
 
 const panelToneClass: Record<PageNoticeTone, string> = {

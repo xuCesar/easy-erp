@@ -13,7 +13,7 @@ import {
   UserRound,
 } from 'lucide-react-taro';
 import type { IconProps } from 'lucide-react-taro';
-import type { LoginMethod, LoginStatus, LoginStatusTone, SmsLoginForm } from './use-login-controller';
+import type { LoginMethod, LoginStatus, LoginStatusTone, SmsLoginForm } from './useLoginController';
 
 type LoginIconComponent = ComponentType<IconProps>;
 
@@ -41,7 +41,7 @@ const statusToneClass: Record<LoginStatusTone, string> = {
 export function LoginPageShell(props: { children: ReactNode }) {
   return (
     <View
-      className={`box-border min-h-screen px-[48px] pb-[42px] pt-[86px] text-[#08112f] ${panelBackgroundClass}`}
+      className={`box-border min-h-screen px-[48px] pb-[42px] pt-[118px] text-[#08112f] ${panelBackgroundClass}`}
     >
       {props.children}
     </View>

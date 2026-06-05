@@ -8,6 +8,7 @@ const bars = [5, 7, 10, 8, 11, 12, 9, 10, 4, 12, 6, 9, 11, 5, 7, 10];
 
 export default function StatisticsPage() {
   useAuthGuard();
+  const currentMonthText = `${new Date().getFullYear()}年${new Date().getMonth() + 1}月`;
 
   return (
     <MiniPage>
@@ -15,7 +16,7 @@ export default function StatisticsPage() {
 
       <View className="mb-[28px] flex items-center justify-center gap-[54px]">
         <ChevronLeft color="#667085" size={32} strokeWidth={1.9} />
-        <Text className="text-[34px] font-extrabold text-[#07112f]">2026年5月</Text>
+        <Text className="text-[34px] font-extrabold text-[#07112f]">{currentMonthText}</Text>
         <ChevronRight color="#667085" size={32} strokeWidth={1.9} />
       </View>
 

@@ -1,21 +1,39 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Button, Text, View } from '@tarojs/components';
 import Taro from '@tarojs/taro';
-import type { CheckinContext, CheckinType } from '@easy-erp/shared-types';
-import { Check, LocateFixed, MapPin } from 'lucide-react-taro';
-import { createRuntimePages } from '../../services';
+import { Button, Map, Text, View } from '@tarojs/components';
+import type { CheckinContext, CheckinType, GeoLocationPayload } from '@easy-erp/shared-types';
+import { Check, MapPin, RefreshCw } from 'lucide-react-taro';
+import { createRuntimeServices } from '../../services';
 import { MiniCard, MiniHeader, MiniNoticePanel, MiniPage, MiniStatus } from '../../components';
+import { cache } from '../../cache';
 import { RouteName } from '../../constants/routes';
 import { useAuthGuard } from '../../hooks/useAuthGuard';
 import { usePageNotice } from '../../hooks/usePageNotice';
 import { navigateTo } from '../../router';
-import { STORAGE_KEYS } from '../../shared/constants/app';
 import { formatTime, formatWeekdayDate } from '../../shared/utils/date';
+
+type LocationState = {
+  location: GeoLocationPayload | null;
+  accuracy: number | null;
+  error: string;
+  isLoading: boolean;
+};
+
+const DEFAULT_MAP_CENTER: GeoLocationPayload = {
+  latitude: 30.2741,
+  longitude: 120.1551,
+};
 
 export default function CheckinPage() {
   useAuthGuard();
 
   const [context, setContext] = useState<CheckinContext | null>(null);
+  const [locationState, setLocationState] = useState<LocationState>({
+    location: null,
+    accuracy: null,
+    error: '',
+    isLoading: true,
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const { notice, clearNotice, showError, showNotice, showWarning } = usePageNotice();
@@ -23,6 +41,7 @@ export default function CheckinPage() {
 
   useEffect(() => {
     void loadContext();
+    void refreshLocation();
   }, []);
 
   async function loadContext() {
@@ -30,7 +49,7 @@ export default function CheckinPage() {
     clearNotice();
 
     try {
-      const nextContext = await createRuntimePages().checkin.loadContext();
+      const nextContext = await createRuntimeServices().checkin.loadContext();
       setContext(nextContext);
     } catch (error) {
       showError(error, '无法读取打卡上下文。', '加载失败');
@@ -39,14 +58,55 @@ export default function CheckinPage() {
     }
   }
 
+  async function refreshLocation(): Promise<GeoLocationPayload | null> {
+    setLocationState((current) => ({ ...current, error: '', isLoading: true }));
+
+    try {
+      const result = await Taro.getLocation({
+        type: 'gcj02',
+        isHighAccuracy: true,
+        highAccuracyExpireTime: 4000,
+      });
+      const location: GeoLocationPayload = {
+        latitude: result.latitude,
+        longitude: result.longitude,
+      };
+
+      setLocationState({
+        location,
+        accuracy: result.accuracy,
+        error: '',
+        isLoading: false,
+      });
+
+      return location;
+    } catch (error) {
+      const message = error instanceof Error && error.message.trim()
+        ? error.message
+        : '定位失败，请确认已授权位置信息并开启定位服务。';
+
+      setLocationState((current) => ({
+        ...current,
+        error: message,
+        isLoading: false,
+      }));
+
+      return null;
+    }
+  }
+
   async function submit(checkinType: CheckinType) {
     setIsSubmitting(true);
     showWarning('正在提交打卡...');
 
-    const { result, feedback } = await createRuntimePages().checkin.submitSafely({ checkinType });
+    const location = locationState.location ?? await refreshLocation();
+    const { result, feedback } = await createRuntimeServices().checkin.submitSafely({
+      checkinType,
+      location: location ?? undefined,
+    });
 
     if (result) {
-      Taro.setStorageSync(STORAGE_KEYS.lastCheckinResult, result);
+      cache.set('lastCheckinResult', result);
       await navigateTo(RouteName.CHECKIN_RESULT);
     }
 
@@ -70,21 +130,40 @@ export default function CheckinPage() {
         ? '上班打卡'
         : '已完成';
   const isPrimaryDisabled = !nextAction || isSubmitting || isLoading;
+  const mapCenter = locationState.location ?? DEFAULT_MAP_CENTER;
+  const locationStatusTone = locationState.error ? 'warning' : 'success';
+  const locationStatusText = locationState.isLoading
+    ? '定位中'
+    : locationState.error
+      ? '定位异常'
+      : '定位正常';
 
   return (
     <MiniPage compact>
       <MiniHeader
         title="打卡"
         back
-        right={<MiniStatus tone="success">定位正常</MiniStatus>}
+        right={<MiniStatus tone={locationStatusTone}>{locationStatusText}</MiniStatus>}
       />
 
-      <View className="mb-[46px] flex items-center justify-between gap-[18px]">
+      <View className="mb-[44px] flex items-center justify-between gap-[18px]">
         <View className="flex min-w-0 flex-1 items-center gap-[12px]">
           <MapPin color="#5b55ff" size={30} strokeWidth={2} />
           <Text className="block truncate text-[28px] font-semibold text-[#667085]">
-            示例科技大厦 · 3楼
+            {locationState.location
+              ? context?.attendanceGroup.name
+                ? `${context.attendanceGroup.name} · 定位已获取`
+                : '定位已获取'
+              : locationState.isLoading
+                ? '正在获取当前位置...'
+                : '当前位置未获取'}
           </Text>
+        </View>
+        <View
+          className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-[18px] bg-[#f0efff]"
+          onClick={() => void refreshLocation()}
+        >
+          <RefreshCw color="#5b55ff" size={28} strokeWidth={2} />
         </View>
       </View>
 
@@ -92,7 +171,7 @@ export default function CheckinPage() {
         <Text className="block text-center text-[58px] font-extrabold tracking-[1px] text-[#07112f]">
           {context?.status.clockInAt ?? nowText}
         </Text>
-        <Text className="mt-[14px] block text-center text-[29px] font-semibold text-[#667085]">
+        <Text className="mt-[14px] block text-center text-[29px] font-semibold leading-[1.35] text-[#667085]">
           {context?.date ?? formatWeekdayDate(new Date())}
         </Text>
       </View>
@@ -107,7 +186,7 @@ export default function CheckinPage() {
         >
           <View>
             <Text className="block text-center text-[38px] font-extrabold text-white">{primaryLabel}</Text>
-            <Text className="mt-[14px] block text-center text-[28px] font-semibold text-white/90">
+            <Text className="mt-[14px] block text-center text-[28px] font-semibold text-[#eeedff]">
               {context?.status.clockInAt ?? nowText}
             </Text>
           </View>
@@ -118,21 +197,40 @@ export default function CheckinPage() {
         <View className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-[#22c55e]">
           <Check color="#ffffff" size={18} strokeWidth={2.6} />
         </View>
-        <Text className="text-[28px] font-semibold text-[#667085]">已进入考勤范围：100米</Text>
+        <Text className="text-[28px] font-semibold text-[#667085]">
+          {locationState.error
+            ? '定位异常，请刷新或检查授权'
+            : locationState.accuracy
+              ? `已进入考勤范围 · 精度约 ${Math.round(locationState.accuracy)} 米`
+              : '等待定位结果'}
+        </Text>
       </View>
 
       <MiniCard className="mt-[36px] h-[270px] overflow-hidden bg-[#f7f8fb] p-0">
-        <View className="relative h-full w-full">
-          <View className="absolute left-[30px] top-[54px] h-[2px] w-[560px] rotate-[12deg] bg-[#dfe4ef]" />
-          <View className="absolute left-[40px] top-[142px] h-[2px] w-[560px] -rotate-[18deg] bg-[#dfe4ef]" />
-          <View className="absolute left-[150px] top-0 h-[270px] w-[2px] rotate-[18deg] bg-[#dfe4ef]" />
-          <View className="absolute left-[330px] top-0 h-[270px] w-[2px] -rotate-[16deg] bg-[#dfe4ef]" />
-          <View className="absolute left-[382px] top-[112px] flex h-[68px] w-[68px] items-center justify-center rounded-[18px] bg-[#5b55ff] shadow-[0_12px_28px_rgba(91,85,255,0.28)]">
-            <LocateFixed color="#ffffff" size={32} strokeWidth={2} />
-          </View>
-          <View className="absolute left-[390px] top-[178px] h-[52px] w-[52px] rounded-full border-[8px] border-white bg-[#3178ff] shadow-[0_10px_24px_rgba(49,120,255,0.24)]" />
-        </View>
+        <Map
+          className="h-full w-full"
+          latitude={mapCenter.latitude}
+          longitude={mapCenter.longitude}
+          onError={() => {
+            setLocationState((current) => current.error
+              ? current
+              : {
+                ...current,
+                error: '地图加载失败，请检查微信开发者工具定位与地图能力配置。',
+              });
+          }}
+          scale={17}
+          showCompass
+          showLocation={Boolean(locationState.location)}
+        />
       </MiniCard>
+
+      {locationState.error ? (
+        <MiniNoticePanel
+          className="mt-[24px]"
+          notice={{ tone: 'warning', message: locationState.error }}
+        />
+      ) : null}
 
       {notice ? <MiniNoticePanel className="mt-[24px]" notice={notice} /> : null}
     </MiniPage>

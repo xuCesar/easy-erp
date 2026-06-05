@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { PageNotice, PageNoticeTone } from '../shared/types/page-notice';
-import { getErrorMessage } from '../shared/utils/error';
+import type { PageNotice, PageNoticeTone } from '../shared/types/pageNotice';
+import { getErrorMessage } from '../api';
 
 export function usePageNotice(initialNotice: PageNotice | null = null) {
   const [notice, setNotice] = useState<PageNotice | null>(initialNotice);

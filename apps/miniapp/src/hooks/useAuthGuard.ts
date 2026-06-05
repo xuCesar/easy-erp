@@ -1,5 +1,5 @@
 import Taro, { useDidShow } from '@tarojs/taro';
-import { isSessionActive, loadSession } from '../api/client';
+import { isSessionActive, loadSession } from '../api';
 import { ROUTE_AUTH_CONFIG } from '../constants/routes';
 import { getRouteNameByPath } from '../router';
 import { redirectToLogin } from '../router/auth';

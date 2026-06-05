@@ -12,7 +12,7 @@ import {
   SmsLoginFields,
   WechatLoginButton,
 } from './components';
-import { useLoginController } from './use-login-controller';
+import { useLoginController } from './useLoginController';
 
 export default function LoginPage() {
   const controller = useLoginController();

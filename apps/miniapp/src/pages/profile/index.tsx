@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Text, View } from '@tarojs/components';
 import type { EmployeeProfileSummary } from '@easy-erp/shared-types';
-import Taro from '@tarojs/taro';
 import {
   Bell,
   Building2,
@@ -11,10 +10,11 @@ import {
   LogOut,
   Settings,
 } from 'lucide-react-taro';
-import { createRuntimePages } from '../../services';
-import { clearSession, loadSession } from '../../api/client';
+import { clearSession, loadSession } from '../../api';
+import { createRuntimeServices } from '../../services';
 import { Chevron, MetricStat, MiniButton, MiniCard, MiniEmptyNotice, MiniHeader, MiniIcon, MiniPage, MiniSectionTitle, type MiniIconComponent } from '../../components';
 import { RouteName } from '../../constants/routes';
+import { toastInfo } from '../../feedback';
 import { useAuthGuard } from '../../hooks/useAuthGuard';
 import { usePageNotice } from '../../hooks/usePageNotice';
 import { navigateTo, reLaunch, switchTab } from '../../router';
@@ -38,7 +38,7 @@ export default function ProfilePage() {
     showMuted('正在读取个人信息...', '正在加载');
 
     try {
-      const result = await createRuntimePages().profile.load();
+      const result = await createRuntimeServices().profile.load();
       setSummary(result);
       clearNotice();
     } catch (error) {
@@ -63,8 +63,8 @@ export default function ProfilePage() {
               {employee?.empNo ? `工号 ${employee.empNo}` : '请联系管理员绑定档案'}
             </Text>
           </View>
-          <View className="rounded-full bg-white px-[22px] py-[12px]">
-            <Text className="text-[25px] font-extrabold text-[#4f46f5]">个人信息</Text>
+          <View className="shrink-0 rounded-full bg-white px-[22px] py-[12px]">
+            <Text className="whitespace-nowrap text-[25px] font-extrabold text-[#4f46f5]">个人信息</Text>
           </View>
         </View>
       </View>
@@ -73,8 +73,8 @@ export default function ProfilePage() {
         <View className="flex items-center gap-[20px]">
           <MiniIcon icon={Building2} tone="primary" />
           <View className="min-w-0 flex-1">
-            <Text className="block text-[31px] font-extrabold text-[#07112f]">示例科技有限公司</Text>
-            <Text className="mt-[6px] block text-[23px] text-[#667085]">Tenant: {session?.tenantId ?? summary?.user.tenantId ?? '-'}</Text>
+            <Text className="block truncate text-[31px] font-extrabold text-[#07112f]">示例科技有限公司</Text>
+            <Text className="mt-[6px] block truncate text-[23px] text-[#667085]">租户 {session?.tenantId ?? summary?.user.tenantId ?? '-'}</Text>
           </View>
           <Chevron />
         </View>
@@ -92,9 +92,9 @@ export default function ProfilePage() {
       <MiniCard className="mb-[24px] px-[24px] py-[10px]">
         <MenuRow icon={ClipboardList} label="考勤记录" onClick={() => navigateTo(RouteName.ATTENDANCE_RECORDS)} />
         <MenuRow icon={CalendarDays} label="请假管理" onClick={() => switchTab(RouteName.REQUESTS)} />
-        <MenuRow icon={Bell} label="消息通知" onClick={() => Taro.showToast({ title: '消息通知待接入', icon: 'none' })} />
-        <MenuRow icon={Settings} label="设置" onClick={() => Taro.showToast({ title: '设置待接入', icon: 'none' })} />
-        <MenuRow icon={CircleQuestionMark} label="帮助与反馈" onClick={() => Taro.showToast({ title: '帮助与反馈待接入', icon: 'none' })} />
+        <MenuRow icon={Bell} label="消息通知" onClick={() => toastInfo('消息通知待接入')} />
+        <MenuRow icon={Settings} label="设置" onClick={() => toastInfo('设置待接入')} />
+        <MenuRow icon={CircleQuestionMark} label="帮助与反馈" onClick={() => toastInfo('帮助与反馈待接入')} />
       </MiniCard>
 
       {notice ? (

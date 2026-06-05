@@ -7,7 +7,8 @@ import type {
   EmployeeProfileSummary,
   PaginatedData,
 } from '@easy-erp/shared-types';
-import { createMiniappPages } from '../features';
+import { TaroApiClient } from '../api';
+import { createAppServices } from '../services';
 
 let postCount = 0;
 
@@ -66,23 +67,24 @@ const client: ApiClient = {
   delete: <TData>() => success({} as TData),
 };
 
-const pages = createMiniappPages(client, {
-  now: () => '2026-05-17T08:00:03+08:00',
-  idempotencyKey: () => 'device-1:2026-05-17:CLOCK_IN:nonce',
-});
+const apiClientContract: ApiClient = client;
+void apiClientContract;
+void TaroApiClient;
 
-const context: Promise<CheckinContext> = pages.checkin.loadContext();
-const result: Promise<CheckinResult> = pages.checkin.submit({
+const services = createAppServices();
+
+const context: Promise<CheckinContext> = services.checkin.loadContext();
+const result: Promise<CheckinResult> = services.checkin.submit({
   checkinType: 'CLOCK_IN',
   location: { latitude: 30.1234567, longitude: 120.1234567 },
 });
 
-pages.login.submit({ phone: '13800000000', password: 'password123' });
-pages.records.search({ startDate: '2026-05-01', endDate: '2026-05-31' });
-pages.leaveRequest.submit({ leaveType: 'PERSONAL', reason: '个人事务' });
-pages.repairRequest.submit({ repairType: 'CLOCK_OUT', reason: '下班忘记打卡' });
-pages.profile.load();
-pages.requests.load();
+services.auth.submit({ phone: '13800000000', password: 'password123' });
+services.attendanceRecords.search({ startDate: '2026-05-01', endDate: '2026-05-31' });
+services.leaveRequest.submit({ leaveType: 'PERSONAL', reason: '个人事务' });
+services.repairRequest.submit({ repairType: 'CLOCK_OUT', reason: '下班忘记打卡' });
+services.profile.load();
+services.requests.load();
 
 void context;
 void result;

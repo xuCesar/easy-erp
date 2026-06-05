@@ -1,18 +1,17 @@
 import { Text, View } from '@tarojs/components';
-import Taro from '@tarojs/taro';
 import type { CheckinResult } from '@easy-erp/shared-types';
 import { CircleAlert, CircleCheckBig } from 'lucide-react-taro';
 import { MiniButton, MiniCard, MiniEmpty, MiniHeader, MiniIcon, MiniPage, MiniStatus } from '../../components';
+import { cache } from '../../cache';
 import { RouteName } from '../../constants/routes';
 import { useAuthGuard } from '../../hooks/useAuthGuard';
 import { navigateTo } from '../../router';
-import { STORAGE_KEYS } from '../../shared/constants/app';
 import { formatDateTime } from '../../shared/utils/date';
 
 export default function CheckinResultPage() {
   useAuthGuard();
 
-  const result = Taro.getStorageSync<CheckinResult | ''>(STORAGE_KEYS.lastCheckinResult);
+  const result = cache.get('lastCheckinResult') as CheckinResult | null;
 
   return (
     <MiniPage compact>
