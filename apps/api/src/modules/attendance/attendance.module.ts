@@ -15,6 +15,7 @@ import { ShiftModule, shiftRepositoryToken, type ShiftRepository } from '../shif
 import { CheckinController } from './checkin/checkin.controller';
 import { PrismaCheckinRepository } from './checkin/checkin.repository';
 import { CheckinService } from './checkin/checkin.service';
+import { PermissionService } from '../../core/permission';
 import {
   AttendanceResultController,
   AttendanceRecalculationService,
@@ -69,9 +70,21 @@ import {
     },
     {
       provide: AttendanceResultService,
-      useFactory: (repository: PrismaAttendanceResultRepository) =>
-        new AttendanceResultService(repository),
-      inject: [attendanceResultRepositoryToken],
+      useFactory: (
+        repository: PrismaAttendanceResultRepository,
+        permissionService: PermissionService,
+        employeeRepository: EmployeeRepository,
+      ) =>
+        new AttendanceResultService(
+          repository,
+          permissionService,
+          employeeRepository,
+        ),
+      inject: [
+        attendanceResultRepositoryToken,
+        PermissionService,
+        employeeRepositoryToken,
+      ],
     },
     {
       provide: AttendanceRecalculationService,

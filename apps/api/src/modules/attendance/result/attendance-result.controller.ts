@@ -1,26 +1,18 @@
 import {
-  BadRequestException,
   Controller,
   Get,
-  Inject,
   Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { AttendancePrimaryStatus } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { AccessTokenGuard } from '../../../core/auth/access-token.guard';
 import type { AuthPrincipal } from '../../../core/auth/auth.types';
+import { PermissionGuard, RequirePermission } from '../../../core/permission';
 import {
-  PermissionGuard,
-  PermissionService,
-  RequirePermission,
-} from '../../../core/permission';
-import { attendanceResultRepositoryToken } from '../attendance.tokens';
-import type {
-  AttendanceResultListItem,
-  AttendanceResultRepository,
-} from './attendance-result.repository';
+  AttendanceResultService,
+  type AttendanceResultQuery,
+} from './attendance-result.service';
 
 type AuthenticatedRequest = {
   user: AuthPrincipal;
@@ -29,11 +21,7 @@ type AuthenticatedRequest = {
 @Controller('attendance/results')
 @UseGuards(AccessTokenGuard, PermissionGuard)
 export class AttendanceResultController {
-  constructor(
-    @Inject(attendanceResultRepositoryToken)
-    private readonly repository: AttendanceResultRepository,
-    private readonly permissionService: PermissionService,
-  ) {}
+  constructor(private readonly attendanceResultService: AttendanceResultService) {}
 
   @Get()
   @RequirePermission('attendance:result:view')
@@ -44,77 +32,23 @@ export class AttendanceResultController {
     @Query('orgUnitId') orgUnitId?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
-    @Query('primaryStatus') primaryStatus?: AttendancePrimaryStatus,
+    @Query('primaryStatus') primaryStatus?: AttendanceResultQuery['primaryStatus'],
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
   ): Promise<unknown> {
-    if (!factoryId || !startDate || !endDate) {
-      throw new BadRequestException('factoryId, startDate and endDate are required.');
-    }
-
-    const query = {
-      factoryId,
-      employeeId: employeeId ?? null,
-      orgUnitId: orgUnitId ?? null,
-      startDate,
-      endDate,
-      primaryStatus,
-      page: parsePositiveInt(page, 1),
-      pageSize: Math.min(parsePositiveInt(pageSize, 20), 100),
-    };
-    const result = await this.repository.list(req.user.tenantId, query);
-    const items = result.items.filter((item) => this.canAccess(req.user, item));
-
-    return ok({
-      items: items.map(toRow),
-      total: items.length,
-      page: query.page,
-      pageSize: query.pageSize,
-      totalPages: Math.ceil(items.length / query.pageSize),
-    });
+    return ok(
+      await this.attendanceResultService.list(req.user, {
+        factoryId,
+        employeeId,
+        orgUnitId: orgUnitId ?? null,
+        startDate,
+        endDate,
+        primaryStatus,
+        page: parsePositiveInt(page, 1),
+        pageSize: Math.min(parsePositiveInt(pageSize, 20), 100),
+      }),
+    );
   }
-
-  private canAccess(
-    principal: AuthPrincipal,
-    item: AttendanceResultListItem,
-  ): boolean {
-    return this.permissionService.canAccessResource(principal, {
-      tenantId: item.tenantId,
-      factoryId: item.factoryId,
-      employeeId: item.employeeId,
-      orgUnitId: item.orgUnitId,
-    });
-  }
-}
-
-function toRow(item: AttendanceResultListItem): {
-  id: string;
-  employeeId: string;
-  employeeName: string;
-  empNo: string;
-  date: string;
-  primaryStatus: AttendancePrimaryStatus;
-  clockInAt: string | null;
-  clockOutAt: string | null;
-  workMinutes: number;
-  lateMinutes: number;
-  earlyLeaveMinutes: number;
-  isFinalized: boolean;
-} {
-  return {
-    id: item.id,
-    employeeId: item.employeeId,
-    employeeName: item.employeeName,
-    empNo: item.empNo,
-    date: item.date,
-    primaryStatus: item.primaryStatus as AttendancePrimaryStatus,
-    clockInAt: item.clockInAt?.toISOString() ?? null,
-    clockOutAt: item.clockOutAt?.toISOString() ?? null,
-    workMinutes: item.workMinutes,
-    lateMinutes: item.lateMinutes,
-    earlyLeaveMinutes: item.earlyLeaveMinutes,
-    isFinalized: item.isFinalized,
-  };
 }
 
 function parsePositiveInt(value: string | undefined, fallback: number): number {

@@ -57,7 +57,13 @@ export type OrgUnitType = 'FACTORY' | 'DEPARTMENT' | 'GROUP';
 export type CheckinMethod = 'GPS' | 'WIFI' | 'PHOTO';
 export type CheckinType = 'CLOCK_IN' | 'CLOCK_OUT';
 export type NextCheckinAction = CheckinType | 'NONE';
-export type AttendancePrimaryStatus = 'NORMAL' | 'ABNORMAL' | 'ABSENT' | 'LEAVE' | 'REST' | 'HOLIDAY';
+export type AttendancePrimaryStatus =
+  | 'NORMAL'
+  | 'LATE'
+  | 'EARLY_LEAVE'
+  | 'ABSENT'
+  | 'LEAVE'
+  | 'MISSING_CLOCK';
 export type LeaveType = 'PERSONAL' | 'SICK' | 'ANNUAL' | 'OTHER';
 export type RepairType = CheckinType;
 export type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
@@ -93,6 +99,14 @@ export interface CurrentUser {
 export interface FactoryOption {
   id: string;
   name: string;
+  timezone: string;
+  status: Exclude<EntityStatus, 'RESIGNED'>;
+}
+
+export interface FactoryProfile {
+  id: string;
+  name: string;
+  address: string | null;
   timezone: string;
   status: Exclude<EntityStatus, 'RESIGNED'>;
 }
@@ -145,7 +159,6 @@ export type UpdateAccountUserRequest = Partial<{
   roles: Role[];
   status: AccountStatus;
 }>;
-
 export interface OrgUnit {
   id: string;
   factoryId: string;
@@ -183,6 +196,11 @@ export interface EmployeeProfile {
   phone: string;
   entryDate: string;
   status: EmployeeStatus;
+}
+
+export interface EmployeeProfileSummary {
+  user: CurrentUser;
+  employee: EmployeeProfile | null;
 }
 
 export interface EmployeeQuery {
@@ -353,9 +371,11 @@ export interface ApprovalItem {
   targetDate?: string;
   repairAt?: string;
   repairType?: RepairType;
+  requestType?: LeaveType | RepairType;
 }
 
 export interface LeaveRequestCreateRequest {
+  factoryId: string;
   leaveType: LeaveType;
   startAt: string;
   endAt: string;
@@ -374,6 +394,7 @@ export interface LeaveRequestDraft {
 }
 
 export interface RepairRequestCreateRequest {
+  factoryId: string;
   targetDate: string;
   repairType: RepairType;
   repairAt: string;
@@ -395,6 +416,16 @@ export interface ApprovalActionRequest {
 
 export interface RejectActionRequest {
   rejectReason: string;
+}
+
+export type ApprovalKind = 'LEAVE' | 'REPAIR';
+
+export interface ApprovalQuery {
+  factoryId: string;
+  orgUnitId?: string | null;
+  status?: ApprovalStatus;
+  page?: number;
+  pageSize?: number;
 }
 
 export interface MonthlyReportQuery {
