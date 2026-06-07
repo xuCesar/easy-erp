@@ -116,6 +116,8 @@ curl -s "http://127.0.0.1:3000/api/v1/reports/monthly?factoryId=22222222-2222-42
 ADMIN_API_PROXY_TARGET="http://127.0.0.1:3000" pnpm --filter @easy-erp/admin dev
 ```
 
+Phase 1.7 后，管理后台采用 Tailwind-first 数据驾驶舱视觉。试点演示前建议按 [Phase 1.7 UI Acceptance Checklist](phase-1-7-ui-acceptance-checklist.md) 完成桌面宽屏和窄屏手工检查，重点确认登录页、导航、范围筛选、状态条、表格、空态、权限 badge、审批操作和月报导出查询。
+
 启动小程序构建监听：
 
 ```bash
@@ -124,6 +126,28 @@ pnpm --filter @easy-erp/miniapp dev:weapp
 
 小程序产物输出到 `apps/miniapp/dist/`，可用微信开发者工具打开。
 
+```bash
+TARO_APP_API_BASE_URL="http://<pilot-api-host>:3000" pnpm --filter @easy-erp/miniapp dev:weapp
+```
+
+构建上传产物：
+
+```bash
+TARO_APP_API_BASE_URL="http://<pilot-api-host>:3000" pnpm --filter @easy-erp/miniapp build
+```
+
+小程序产物输出到 `apps/miniapp/dist/`，由开发者使用微信开发者工具打开该目录，完成预览、真机调试和手动上传。
+
+Phase 1.7 后，小程序采用 `weapp-tailwindcss` + 自有 Taro 组件。小程序构建与上传由开发者手动完成，不作为 CI 阻断项。上传前建议确认：
+
+- `TARO_APP_API_BASE_URL` 指向目标试点 API 地址。
+- `pnpm --filter @easy-erp/miniapp build` 可生成 `apps/miniapp/dist/`。
+- 微信开发者工具可打开 `apps/miniapp/dist/`，且 WXSS 不包含未展开的 `@tailwind` 指令。
+- 已在微信开发者工具中完成预览或真机调试。
+- 登录、打卡、考勤记录、请假和补卡页面能访问试点 API。
+- 登录、打卡、考勤记录、请假、补卡和个人页的 PageShell、Card、Field、PrimaryButton、StatusText 与状态 badge 视觉一致。
+
+## 7. 回滚边界
 ## 6. 回滚边界
 
 - Prisma 生产迁移不做自动下滚。上线前必须先在 staging 或临时空库执行 `migrate deploy`。
