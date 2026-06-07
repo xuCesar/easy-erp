@@ -16,8 +16,6 @@ Task 1-11 已完成，Phase 1 MVP 验证门禁已通过。验收结果记录在 
 
 Task 12-18 已完成，Phase 1.5 生产化试点已补齐 CI、真实前端、导出任务持久化、试点部署初始化和端到端冒烟验收。完成状态记录在 `docs/plan/phase-1-5-production-pilot-plan.md`。
 
-Task 19-22 为 Phase 1.6 试点硬化周期，目标是补齐 API CI 冒烟门禁、基础可观测性、试点 Runbook 和 readiness report。计划记录在 `docs/plan/phase-1-6-pilot-hardening-plan.md`。
-
 ---
 
 ## 1. Reference Documents

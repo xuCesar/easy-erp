@@ -1,0 +1,97 @@
+.pageShell {
+  min-height: 100vh;
+  padding: 32px 24px 56px;
+  background:
+    radial-gradient(circle at 88% 0%, rgba(238, 191, 96, 0.38), transparent 34%),
+    linear-gradient(180deg, #eef3ec 0%, #f8fbf5 100%);
+}
+
+.pageHero {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.eyebrow {
+  color: #b37718;
+  font-size: 22px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.pageTitle {
+  color: #173f35;
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.pageSubtitle,
+.statusText {
+  color: #60736a;
+  font-size: 26px;
+  line-height: 1.5;
+}
+
+.card {
+  margin-bottom: 22px;
+  padding: 24px;
+  border: 1px solid rgba(23, 63, 53, 0.12);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 18px 42px rgba(51, 74, 58, 0.12);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.fieldLabel {
+  color: #496057;
+  font-size: 24px;
+}
+
+.input {
+  height: 78px;
+  padding: 0 20px;
+  border: 1px solid #cfdbd1;
+  border-radius: 18px;
+  background: #ffffff;
+  color: #102033;
+  font-size: 28px;
+}
+
+.primaryButton {
+  margin: 14px 0 0;
+  border-radius: 999px;
+  background: #173f35;
+  color: #ffffff;
+  font-size: 28px;
+}
+
+.listItem {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px 0;
+  border-bottom: 1px solid #e3ebe4;
+}
+
+.listItem:last-child {
+  border-bottom: 0;
+}
+
+.itemTitle {
+  color: #173f35;
+  font-size: 30px;
+  font-weight: 600;
+}
+
+.itemMeta {
+  color: #60736a;
+  font-size: 24px;
+}

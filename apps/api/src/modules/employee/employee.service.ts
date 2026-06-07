@@ -51,10 +51,6 @@ export class EmployeeService {
     };
   }
 
-  async findById(tenantId: string, id: string): Promise<EmployeeRecord | null> {
-    return this.employeeRepository.findById(tenantId, id);
-  }
-
   async create(input: CreateEmployeeInput): Promise<EmployeeRecord> {
     await this.assertEmpNoAvailable(input.tenantId, input.empNo);
     await this.assertOrgUnitInSameFactory(

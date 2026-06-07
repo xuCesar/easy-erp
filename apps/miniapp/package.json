@@ -3,10 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev:weapp": "taro build --type weapp --watch --no-check",
-    "build": "tsc -p tsconfig.json --noEmit && taro build --type weapp --no-check",
-    "build:weapp": "taro build --type weapp --no-check",
-    "postinstall": "weapp-tw patch",
+    "dev:weapp": "taro build --type weapp --watch",
+    "build": "tsc -p tsconfig.json --noEmit && taro build --type weapp",
+    "build:weapp": "taro build --type weapp",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
@@ -16,7 +15,6 @@
     "@tarojs/runtime": "^4.2.0",
     "@tarojs/shared": "^4.2.0",
     "@tarojs/taro": "^4.2.0",
-    "lucide-react-taro": "^1.5.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
@@ -29,8 +27,6 @@
     "@types/react": "^18.3.28",
     "@types/react-dom": "^18.3.7",
     "babel-preset-taro": "^4.2.0",
-    "less": "^4.2.0",
-    "tailwindcss": "^3.4.17",
-    "weapp-tailwindcss": "^4.12.0"
+    "less": "^4.2.0"
   }
 }

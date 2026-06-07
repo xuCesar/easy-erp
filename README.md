@@ -2,7 +2,7 @@
 
 面向中小型制造工厂的轻量企业管理系统。当前阶段以考勤模块为切入点，目标是先交付单工厂考勤闭环，再逐步扩展到排班、多工厂、工资、计件、门禁和硬件集成。
 
-当前仓库状态：Phase 1 单工厂考勤 MVP、Phase 1.5 生产化试点和 Phase 1.6 试点硬化任务均已完成。当前进入 Phase 1.7 UI 品牌升级周期，目标是在不进入 Phase 2 业务扩展的前提下，统一 Admin 与小程序的数据驾驶舱视觉体验。
+当前仓库状态：Phase 1 单工厂考勤 MVP 与 Phase 1.5 生产化试点任务均已完成。当前能力包括可运行管理后台、可运行 Taro 小程序、GitHub Actions CI、数据库持久化月报导出任务、试点初始化 Runbook 和端到端冒烟验收脚本。
 
 ---
 
@@ -41,15 +41,11 @@ Phase 1 不包含：
 | [Permission Matrix](docs/design/permission-matrix.md) | 角色、权限点、数据范围与后端校验规则 |
 | [Attendance Calculation Cases](docs/design/attendance-calculation-cases.md) | 考勤计算规则和 C001-C018 用例矩阵 |
 | [DevOps And Env](docs/design/devops-and-env.md) | 环境变量、Docker、CI、迁移、备份、运维约束 |
-| [UI Visual System V1](docs/design/ui-visual-system-v1.md) | Phase 1.7 数据驾驶舱视觉系统、双主题 token 和双端 UI 规则 |
 | [MVP Implementation Plan](docs/plan/factory-erp-mvp-implementation-plan.md) | Phase 0/1 实施任务拆解 |
 | [Phase 1 MVP Readiness Report](docs/plan/phase-1-mvp-readiness-report.md) | Phase 1 验证门禁结果 |
 | [Phase 1.5 Production Pilot Plan](docs/plan/phase-1-5-production-pilot-plan.md) | 生产化试点任务拆解与完成标准 |
 | [Phase 1.5 Pilot Deployment Runbook](docs/plan/phase-1-5-pilot-deployment-runbook.md) | 试点部署、空库初始化、demo seed 和故障定位 |
 | [Phase 1.5 Smoke Acceptance](docs/plan/phase-1-5-smoke-acceptance.md) | 端到端冒烟脚本、UI 清单和阻断条件 |
-| [Phase 1.6 Pilot Hardening Plan](docs/plan/phase-1-6-pilot-hardening-plan.md) | 试点硬化任务拆解与完成标准 |
-| [Phase 1.6 Readiness Report](docs/plan/phase-1-6-readiness-report.md) | 试点硬化验证结果、已知限制和 Phase 2 前建议 |
-| [Phase 1.7 UI Brand Refresh Plan](docs/plan/phase-1-7-ui-brand-refresh-plan.md) | Tailwind-first 数据驾驶舱 UI 升级任务拆解 |
 
 历史文档：
 
@@ -112,14 +108,12 @@ docs/
 
 ## 6. 当前里程碑
 
-当前 Task 1-22 均已完成，Task 23-27 为 Phase 1.7 UI 品牌升级周期：
+当前 Task 1-18 均已完成，相关 GitHub issues 已关闭：
 
 - Task 1-11：Phase 1 单工厂考勤 MVP 与验证门禁。
 - Task 12-18：Phase 1.5 生产化试点，包括 CI、真实前端、导出任务持久化、试点部署初始化和端到端冒烟验收。
-- Task 19-22：Phase 1.6 试点硬化，包括 API CI 冒烟门禁、基础可观测性、Runbook 更新和 readiness report。
-- Task 23-27：Phase 1.7 UI 品牌升级，包括 Tailwind-first 数据驾驶舱视觉系统、Admin shadcn/Tailwind 基线、Admin 全后台重构、小程序 weapp-tailwindcss 重构和 UI 验收文档。
 
-Phase 1.7 不进入 Phase 2 业务开发；排班、多工厂、工资、硬件集成等新主线需基于试点反馈再单独规划。
+后续进入 Phase 2 前，建议先基于试点反馈确认下一批 GitHub issues，避免把排班、多工厂、工资、硬件集成等新主线混入当前稳定化收尾。
 
 ---
 
@@ -162,19 +156,13 @@ ADMIN_API_PROXY_TARGET="http://127.0.0.1:3001" pnpm --filter @easy-erp/admin dev
 pnpm --filter @easy-erp/miniapp dev:weapp
 ```
 
-真机或局域网联调时通过 `TARO_APP_API_BASE_URL` 指定后端地址，例如：
-
-```bash
-TARO_APP_API_BASE_URL="http://<your-lan-ip>:3000" pnpm --filter @easy-erp/miniapp dev:weapp
-```
-
 构建微信小程序产物：
 
 ```bash
 pnpm --filter @easy-erp/miniapp build
 ```
 
-小程序构建不作为 CI 阻断项。产物输出到 `apps/miniapp/dist/`，由开发者使用微信开发者工具打开该目录，完成预览、真机调试和手动上传。
+产物输出到 `apps/miniapp/dist/`，可用微信开发者工具打开该目录进行预览和真机调试。
 
 ---
 

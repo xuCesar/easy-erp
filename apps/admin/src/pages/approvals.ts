@@ -1,12 +1,5 @@
-import type {
-  ApiClient,
-  ApprovalItem,
-  ApprovalQuery,
-  ApprovalStatus,
-  PaginatedData,
-} from '@easy-erp/shared-types';
+import type { ApiClient, ApprovalItem, PaginatedData } from '@easy-erp/shared-types';
 import {
-  buildQuery,
   emptyPage,
   requestData,
   toAdminFeedback,
@@ -16,38 +9,23 @@ import {
 
 export interface ApprovalPage {
   emptyData: PaginatedData<ApprovalItem>;
-  list(query?: Partial<ApprovalQuery>): Promise<PaginatedData<ApprovalItem>>;
   approve(id: string, comment: string): Promise<void>;
   reject(id: string, rejectReason: string): Promise<void>;
   approveSafely(id: string, comment: string): Promise<AdminFeedback>;
   rejectSafely(id: string, rejectReason: string): Promise<AdminFeedback>;
 }
 
-export function createLeaveApprovalsPage(client: ApiClient, scope: AdminDashboardScope): ApprovalPage {
-  return createApprovalPage(client, scope, '/api/v1/leave/requests');
+export function createLeaveApprovalsPage(client: ApiClient, _scope: AdminDashboardScope): ApprovalPage {
+  return createApprovalPage(client, '/api/v1/leave/requests');
 }
 
-export function createRepairApprovalsPage(client: ApiClient, scope: AdminDashboardScope): ApprovalPage {
-  return createApprovalPage(client, scope, '/api/v1/repair/requests');
+export function createRepairApprovalsPage(client: ApiClient, _scope: AdminDashboardScope): ApprovalPage {
+  return createApprovalPage(client, '/api/v1/repair/requests');
 }
 
-function createApprovalPage(client: ApiClient, scope: AdminDashboardScope, resourcePath: string): ApprovalPage {
+function createApprovalPage(client: ApiClient, resourcePath: string): ApprovalPage {
   return {
     emptyData: emptyPage<ApprovalItem>(),
-
-    list(query: Partial<ApprovalQuery> = {}): Promise<PaginatedData<ApprovalItem>> {
-      return requestData(
-        client.get<PaginatedData<ApprovalItem>>(
-          `${resourcePath}${buildQuery({
-            factoryId: query.factoryId ?? scope.factoryId,
-            orgUnitId: query.orgUnitId ?? scope.orgUnitId,
-            status: query.status,
-            page: query.page ?? 1,
-            pageSize: query.pageSize ?? 20,
-          })}`,
-        ),
-      );
-    },
 
     async approve(id: string, comment: string): Promise<void> {
       await requestData(client.post<null, { comment: string }>(`${resourcePath}/${id}/approve`, { comment }));
@@ -76,5 +54,3 @@ function createApprovalPage(client: ApiClient, scope: AdminDashboardScope, resou
     },
   };
 }
-
-export const approvalStatuses: ApprovalStatus[] = ['PENDING', 'APPROVED', 'REJECTED'];
