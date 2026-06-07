@@ -30,6 +30,14 @@ type MonthlyReport = {
   items: Array<{ employeeId: string; isFinalized: boolean }>;
 };
 
+type PaginatedData<TItem> = {
+  items: TItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
 type ReportTask = {
   taskId: string;
   status: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
@@ -67,6 +75,29 @@ async function main(): Promise<void> {
   const employee = await step('employee login', () =>
     login(employeePhone, employeePassword, 'EMPLOYEE'),
   );
+
+  await step('admin can load workspace context', async () => {
+    const profile = await get<{
+      factories: Array<{ id: string }>;
+      defaultScope: { factoryId: string | null };
+    }>('/auth/me', admin.accessToken);
+    assert(
+      profile.factories.some((factory) => factory.id === demo.factoryId),
+      'workspace should include demo factory',
+    );
+    assert(profile.defaultScope.factoryId, 'workspace should provide default factory');
+  });
+
+  await step('admin can list accounts', async () => {
+    const page = await get<PaginatedData<{ id: string; phone: string; roles: string[] }>>(
+      '/accounts',
+      admin.accessToken,
+    );
+    assert(
+      page.items.some((account) => account.phone === adminPhone),
+      'account list should include demo admin',
+    );
+  });
 
   await step('admin can create employee', async () => {
     const created = await post<{ id: string }>(
@@ -117,6 +148,18 @@ async function main(): Promise<void> {
     assert(context.shift.id === demo.shiftId, 'shift should match demo');
   });
 
+  await step('employee can query attendance records', async () => {
+    const records = await get<PaginatedData<{ employeeId: string }>>(
+      '/attendance/results?startDate=2026-05-01&endDate=2026-05-31&page=1&pageSize=31',
+      employee.accessToken,
+    );
+    assert(records.total >= 1, 'attendance records should include demo result');
+    assert(
+      records.items.some((item) => item.employeeId === demo.workerEmployeeId),
+      'attendance records should include demo worker',
+    );
+  });
+
   await step('employee can check in with idempotency key', async () => {
     const result = await post<{ recordId: string; isValid: boolean }>(
       '/attendance/checkin',
@@ -150,6 +193,14 @@ async function main(): Promise<void> {
     ),
   );
 
+  await step('admin can list pending leave approvals', async () => {
+    const page = await get<PaginatedData<{ id: string; status: string }>>(
+      `/leave/requests?factoryId=${demo.factoryId}&status=PENDING`,
+      admin.accessToken,
+    );
+    assert(page.items.some((item) => item.id === leave.id), 'leave approval list should include pending leave');
+  });
+
   await step('admin can approve leave request', async () => {
     const approved = await post<{ id: string; status: string }>(
       `/leave/requests/${leave.id}/approve`,
@@ -174,6 +225,14 @@ async function main(): Promise<void> {
     ),
   );
 
+  await step('admin can list pending repair approvals', async () => {
+    const page = await get<PaginatedData<{ id: string; status: string }>>(
+      `/repair/requests?factoryId=${demo.factoryId}&status=PENDING`,
+      admin.accessToken,
+    );
+    assert(page.items.some((item) => item.id === repair.id), 'repair approval list should include pending repair');
+  });
+
   await step('admin can approve repair request', async () => {
     const approved = await post<{ request: { status: string }; checkinRecordId: string }>(
       `/repair/requests/${repair.id}/approve`,
@@ -195,6 +254,14 @@ async function main(): Promise<void> {
       report.items.some((item) => item.employeeId === demo.workerEmployeeId),
       'monthly report should include demo worker',
     );
+  });
+
+  await step('admin can query abnormal attendance results', async () => {
+    const page = await get<PaginatedData<{ id: string; primaryStatus: string }>>(
+      `/attendance/results?factoryId=${demo.factoryId}&startDate=2026-05-01&endDate=2026-05-31&primaryStatus=ABSENT`,
+      admin.accessToken,
+    );
+    assert(Array.isArray(page.items), 'abnormal result query should return page items');
   });
 
   await step('monthly lock finalizes report results', async () => {

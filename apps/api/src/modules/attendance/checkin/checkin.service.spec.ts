@@ -192,7 +192,9 @@ describe('CheckinService', () => {
   });
 
   it('marks check-in invalid when location is outside allowed radius', async () => {
-    const service = createService();
+    const service = createService({
+      groups: [group({ allowOutsideCheckin: true })],
+    });
 
     const result = await service.checkin(principal(), {
       checkinType: 'CLOCK_IN',

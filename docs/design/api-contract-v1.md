@@ -124,6 +124,59 @@
 }
 ```
 
+### `GET /api/v1/auth/me`
+
+返回当前账号、角色、数据范围和后台默认工作范围。管理后台应优先使用该接口自动选择工厂和组织，避免要求用户手动输入内部 ID。
+
+响应数据：
+
+```json
+{
+  "user": {
+    "id": "user-id",
+    "tenantId": "tenant-id",
+    "employeeId": "employee-id",
+    "phone": "13800000000",
+    "roles": ["HR_ADMIN"],
+    "status": "ACTIVE",
+    "dataScopes": [{ "type": "FACTORY", "factoryId": "factory-id" }]
+  },
+  "employee": {
+    "id": "employee-id",
+    "factoryId": "factory-id",
+    "orgUnitId": "org-unit-id",
+    "empNo": "E001",
+    "name": "张三",
+    "phone": "13800000000",
+    "entryDate": "2026-05-17",
+    "status": "ACTIVE"
+  },
+  "factories": [{ "id": "factory-id", "name": "杭州工厂", "timezone": "Asia/Shanghai", "status": "ACTIVE" }],
+  "orgUnits": [],
+  "defaultScope": { "factoryId": "factory-id", "orgUnitId": "org-unit-id" }
+}
+```
+
+### 账号管理接口
+
+轻量账号管理仅维护考勤 MVP 所需的账号、员工绑定、角色和状态，不提供自定义权限模板。
+
+- `GET /api/v1/accounts`
+- `POST /api/v1/accounts`
+- `PATCH /api/v1/accounts/:id`
+
+创建请求：
+
+```json
+{
+  "phone": "13800000000",
+  "password": "password123",
+  "employeeId": "employee-id",
+  "roles": ["EMPLOYEE"],
+  "status": "ACTIVE"
+}
+```
+
 ---
 
 ## 5. 组织与员工
@@ -364,7 +417,13 @@
     "id": "group-id",
     "name": "生产一组考勤",
     "checkinMethods": ["GPS", "WIFI"],
-    "requirePhoto": false
+    "gpsLat": 30.1234567,
+    "gpsLng": 120.1234567,
+    "gpsRadiusMeters": 300,
+    "wifiSsid": "factory-wifi",
+    "wifiBssid": "00:11:22:33:44:55",
+    "requirePhoto": false,
+    "allowOutsideCheckin": true
   },
   "status": {
     "clockInAt": null,
@@ -409,6 +468,12 @@
 }
 ```
 
+说明：
+
+- GPS、Wi-Fi、拍照会按考勤组规则校验。
+- `allowOutsideCheckin=true` 时，不满足规则仍可记录，但 `isValid=false` 且 `invalidReason` 说明异常原因。
+- `allowOutsideCheckin=false` 时，不满足必需规则会返回业务冲突错误，不创建打卡记录。
+
 ---
 
 ## 8. 考勤结果
@@ -428,6 +493,8 @@
 | `page` | 页码 |
 | `pageSize` | 每页数量 |
 
+`primaryStatus` 当前取值：`NORMAL`、`ABNORMAL`、`ABSENT`、`LEAVE`、`REST`、`HOLIDAY`。迟到、早退、缺卡等细分原因由结果行中的分钟数和异常标记表达。
+
 ### `POST /api/v1/attendance/results/recalculate`
 
 请求：
@@ -444,6 +511,18 @@
 ---
 
 ## 9. 请假与补卡
+
+### `GET /api/v1/leave/requests`
+
+查询参数：
+
+| 参数 | 说明 |
+| --- | --- |
+| `factoryId` | 工厂 ID |
+| `status` | `PENDING`、`APPROVED`、`REJECTED` |
+| `keyword` | 员工姓名、工号或原因 |
+| `page` | 页码 |
+| `pageSize` | 每页数量 |
 
 ### `POST /api/v1/leave/requests`
 
@@ -485,6 +564,10 @@
   "attachments": []
 }
 ```
+
+### `GET /api/v1/repair/requests`
+
+查询参数同请假审批列表。返回项统一包含 `type`、`employeeName`、`empNo`、`status`、`reason` 和补卡目标日期。
 
 ### `POST /api/v1/repair/requests/:id/approve`
 

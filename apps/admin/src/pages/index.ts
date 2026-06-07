@@ -1,5 +1,6 @@
 import type { ApiClient } from '@easy-erp/shared-types';
 import type { AdminDashboardScope } from './common';
+import { createAccountsPage } from './accounts';
 import { createAttendanceGroupsPage } from './attendance-groups';
 import { createAttendanceResultsPage } from './attendance-results';
 import { createEmployeesPage } from './employees';
@@ -17,6 +18,7 @@ export function createAdminDashboardPage(client: ApiClient, scope: AdminDashboar
     attendanceResults: createAttendanceResultsPage(client, scope),
     leaveApprovals: createLeaveApprovalsPage(client, scope),
     repairApprovals: createRepairApprovalsPage(client, scope),
+    accounts: createAccountsPage(client),
     monthlyReport: createMonthlyReportPage(client, scope),
   };
 }

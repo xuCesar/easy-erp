@@ -60,9 +60,27 @@ export type UpdateRepairStatusInput = {
   rejectReason?: string | null;
 };
 
+export type ApprovalListQuery = {
+  factoryId: string;
+  status?: ApprovalStatus;
+  keyword?: string | null;
+  page: number;
+  pageSize: number;
+};
+
+export type RepairApprovalListItem = RepairRequestRecord & {
+  employeeName: string;
+  empNo: string;
+  orgUnitId: string | null;
+};
+
 export interface RepairRequestRepository {
   create(input: CreateRepairRequestInput): Promise<RepairRequestRecord>;
   findById(tenantId: string, id: string): Promise<RepairRequestRecord | null>;
+  list(
+    tenantId: string,
+    query: ApprovalListQuery,
+  ): Promise<{ items: RepairApprovalListItem[]; total: number }>;
   approveWithManualCheckin(input: {
     tenantId: string;
     id: string;
@@ -122,6 +140,65 @@ export class PrismaRepairRequestRepository
     });
 
     return record ? toRepairRequestRecord(record) : null;
+  }
+
+  async list(
+    tenantId: string,
+    query: ApprovalListQuery,
+  ): Promise<{ items: RepairApprovalListItem[]; total: number }> {
+    const where = {
+      tenantId,
+      factoryId: query.factoryId,
+      deletedAt: null,
+      ...(query.status ? { status: query.status } : {}),
+      ...(query.keyword
+        ? {
+            OR: [
+              { reason: { contains: query.keyword, mode: 'insensitive' as const } },
+              {
+                employee: {
+                  name: { contains: query.keyword, mode: 'insensitive' as const },
+                },
+              },
+              {
+                employee: {
+                  empNo: { contains: query.keyword, mode: 'insensitive' as const },
+                },
+              },
+            ],
+          }
+        : {}),
+    };
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.repairRequest.findMany({
+        where,
+        include: {
+          employee: {
+            select: {
+              name: true,
+              empNo: true,
+              orgUnitId: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip: (query.page - 1) * query.pageSize,
+        take: query.pageSize,
+      }),
+      this.prisma.repairRequest.count({ where }),
+    ]);
+
+    return {
+      items: items.map((item) => ({
+        ...toRepairRequestRecord(item),
+        employeeName: item.employee.name,
+        empNo: item.employee.empNo,
+        orgUnitId: item.employee.orgUnitId,
+      })),
+      total,
+    };
   }
 
   async approveWithManualCheckin(input: {

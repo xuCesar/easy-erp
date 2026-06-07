@@ -3,8 +3,10 @@ import {
   Body,
   Controller,
   ForbiddenException,
+  Get,
   Param,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -22,6 +24,31 @@ type AuthenticatedRequest = {
 @UseGuards(AccessTokenGuard, PermissionGuard)
 export class RepairController {
   constructor(private readonly repairService: RepairService) {}
+
+  @Get()
+  @RequirePermission('repair:request:view')
+  async list(
+    @Req() req: AuthenticatedRequest,
+    @Query('factoryId') factoryId?: string,
+    @Query('status') status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'REVOKED' | 'DRAFT',
+    @Query('keyword') keyword?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ): Promise<unknown> {
+    if (!factoryId) {
+      throw new BadRequestException('factoryId is required.');
+    }
+
+    return ok(
+      await this.repairService.list(req.user, {
+        factoryId,
+        status,
+        keyword: keyword ?? null,
+        page: parsePositiveInt(page, 1),
+        pageSize: Math.min(parsePositiveInt(pageSize, 20), 100),
+      }),
+    );
+  }
 
   @Post()
   @RequirePermission('repair:request:create')
@@ -90,6 +117,12 @@ function assertCreateBody(body: RepairRequestBody): void {
   if (!body?.factoryId || !body.targetDate || !body.repairType || !body.repairAt) {
     throw new BadRequestException('Invalid repair request.');
   }
+}
+
+function parsePositiveInt(value: string | undefined, fallback: number): number {
+  const parsed = Number(value);
+
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 function ok<T>(

@@ -7,8 +7,10 @@ import type { AccountAuthRecord, AccountRepository } from '../account';
 import { PasswordService } from './password.service';
 import { RefreshTokenStore } from './refresh-token.store';
 import { TokenService } from './token.service';
+import { WorkspaceRepository } from './workspace.repository';
 import type {
   AuthPrincipal,
+  CurrentUserProfileResponse,
   AuthTokenResponse,
   LoginRequest,
   LogoutRequest,
@@ -22,6 +24,7 @@ export class AuthService {
     private readonly passwordService: PasswordService,
     private readonly tokenService: TokenService,
     private readonly refreshTokenStore: RefreshTokenStore,
+    private readonly workspaceRepository: WorkspaceRepository,
   ) {}
 
   async login(request: LoginRequest): Promise<AuthTokenResponse> {
@@ -70,6 +73,73 @@ export class AuthService {
     if (claims.jti) {
       await this.refreshTokenStore.revoke(claims.jti);
     }
+  }
+
+  async getCurrentUserProfile(
+    principal: AuthPrincipal,
+  ): Promise<CurrentUserProfileResponse> {
+    const account = await this.accountRepository.findById(principal.id);
+
+    if (!account || account.tenantId !== principal.tenantId) {
+      throw new UnauthorizedException('Invalid token.');
+    }
+
+    const factories = await this.workspaceRepository.listFactories(
+      principal.tenantId,
+      account.dataScopes,
+    );
+    const orgUnits = await this.workspaceRepository.listOrgUnits(
+      principal.tenantId,
+      factories.map((factory) => factory.id),
+    );
+    const employee = await this.workspaceRepository.findEmployee(
+      principal.tenantId,
+      account.employeeId,
+    );
+    const firstFactory = factories[0] ?? null;
+
+    return {
+      user: {
+        id: account.id,
+        tenantId: account.tenantId,
+        employeeId: account.employeeId,
+        phone: account.phone,
+        roles: account.roles,
+        status: account.status,
+        dataScopes: account.dataScopes,
+      },
+      employee: employee
+        ? {
+            id: employee.id,
+            factoryId: employee.factoryId,
+            orgUnitId: employee.orgUnitId,
+            empNo: employee.empNo,
+            name: employee.name,
+            phone: employee.phone,
+            entryDate: employee.entryDate.toISOString().slice(0, 10),
+            status: employee.status,
+          }
+        : null,
+      factories: factories.map((factory) => ({
+        id: factory.id,
+        name: factory.name,
+        timezone: factory.timezone,
+        status: factory.status,
+      })),
+      orgUnits: orgUnits.map((orgUnit) => ({
+        id: orgUnit.id,
+        factoryId: orgUnit.factoryId,
+        parentId: orgUnit.parentId,
+        name: orgUnit.name,
+        type: orgUnit.type,
+        sortOrder: orgUnit.sortOrder,
+        status: orgUnit.status,
+      })),
+      defaultScope: {
+        factoryId: firstFactory?.id ?? employee?.factoryId ?? null,
+        orgUnitId: employee?.orgUnitId ?? null,
+      },
+    };
   }
 
   private async findPasswordMatchedAccount(

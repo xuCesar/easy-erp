@@ -1,4 +1,9 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import type { AuthPrincipal } from '../../../core/auth';
 import type { AttendanceGroupRepository, AttendanceGroupRecord } from '../../attendance-group';
 import type { EmployeeRepository } from '../../employee';
@@ -36,6 +41,12 @@ export type CheckinContext = {
   attendanceGroup: Pick<
     AttendanceGroupRecord,
     'id' | 'name' | 'checkinMethods' | 'requirePhoto'
+    | 'gpsLat'
+    | 'gpsLng'
+    | 'gpsRadiusMeters'
+    | 'wifiSsid'
+    | 'wifiBssid'
+    | 'allowOutsideCheckin'
   >;
   status: {
     clockInAt: Date | null;
@@ -86,7 +97,13 @@ export class CheckinService {
         id: group.id,
         name: group.name,
         checkinMethods: group.checkinMethods,
+        gpsLat: group.gpsLat,
+        gpsLng: group.gpsLng,
+        gpsRadiusMeters: group.gpsRadiusMeters,
+        wifiSsid: group.wifiSsid,
+        wifiBssid: group.wifiBssid,
         requirePhoto: group.requirePhoto,
+        allowOutsideCheckin: group.allowOutsideCheckin,
       },
       status: {
         clockInAt,
@@ -128,6 +145,11 @@ export class CheckinService {
       dateOnly(attendanceDate),
     );
     const validation = validateCheckin(group, request);
+
+    if (!validation.isValid && !group.allowOutsideCheckin) {
+      throw new ConflictException(validation.invalidReason ?? 'CHECKIN_INVALID');
+    }
+
     const input: CreateCheckinInput = {
       tenantId: principal.tenantId,
       factoryId: employee.factoryId,
@@ -198,6 +220,16 @@ function validateCheckin(
   group: AttendanceGroupRecord,
   request: CheckinRequest,
 ): { isValid: boolean; invalidReason: string | null } {
+  const invalidReasons: string[] = [];
+
+  if (
+    group.checkinMethods.includes('GPS') &&
+    (group.gpsLat !== null || group.gpsLng !== null || group.gpsRadiusMeters !== null) &&
+    !request.location
+  ) {
+    invalidReasons.push('LOCATION_REQUIRED');
+  }
+
   if (
     group.checkinMethods.includes('GPS') &&
     group.gpsLat !== null &&
@@ -213,8 +245,16 @@ function validateCheckin(
     );
 
     if (distance > group.gpsRadiusMeters) {
-      return { isValid: false, invalidReason: 'LOCATION_INVALID' };
+      invalidReasons.push('LOCATION_INVALID');
     }
+  }
+
+  if (
+    group.checkinMethods.includes('WIFI') &&
+    (group.wifiSsid || group.wifiBssid) &&
+    !request.wifi
+  ) {
+    invalidReasons.push('WIFI_REQUIRED');
   }
 
   if (
@@ -222,10 +262,16 @@ function validateCheckin(
     request.wifi &&
     (request.wifi.ssid !== group.wifiSsid || request.wifi.bssid !== group.wifiBssid)
   ) {
-    return { isValid: false, invalidReason: 'WIFI_INVALID' };
+    invalidReasons.push('WIFI_INVALID');
   }
 
-  return { isValid: true, invalidReason: null };
+  if (group.requirePhoto && !request.photoUrl) {
+    invalidReasons.push('PHOTO_REQUIRED');
+  }
+
+  return invalidReasons.length > 0
+    ? { isValid: false, invalidReason: invalidReasons.join(',') }
+    : { isValid: true, invalidReason: null };
 }
 
 function resolveMethod(group: AttendanceGroupRecord, request: CheckinRequest): CreateCheckinInput['method'] {

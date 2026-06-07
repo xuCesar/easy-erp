@@ -143,6 +143,9 @@ describe('ReportService', () => {
       async findByEmployeeAndDate() {
         return locked;
       },
+      async list() {
+        return { items: [], total: 0 };
+      },
       async upsert() {
         throw new Error('upsert should not be called for finalized result');
       },

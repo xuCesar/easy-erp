@@ -29,7 +29,7 @@ dashboard.employees.search({ keyword: '张三', status: 'ACTIVE' });
 dashboard.shifts.load();
 dashboard.attendanceGroups.load();
 dashboard.attendanceResults.search({
-  primaryStatus: 'LATE' satisfies AttendancePrimaryStatus,
+  primaryStatus: 'ABSENT' satisfies AttendancePrimaryStatus,
   startDate: '2026-05-01',
   endDate: '2026-05-31',
 });

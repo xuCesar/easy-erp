@@ -1,4 +1,5 @@
 export * from './attendance.module';
+export * from './attendance.tokens';
 export * from './calculator/attendance-calculator';
 export * from './calculator/attendance-calculator.types';
 export * from './checkin/checkin.repository';
