@@ -1,29 +1,76 @@
 import { useState } from 'react';
-import type { RepairRequestDraft } from '@easy-erp/shared-types';
-import { createRuntimePages } from '../../services';
-import { Card, Field, PageShell, PrimaryButton, StatusText } from '../../ui';
+import { Text, View } from '@tarojs/components';
+import type { RepairRequestDraft, RepairType } from '@easy-erp/shared-types';
+import { createRuntimeServices } from '../../services';
+import { AttachmentUploadPlaceholder, CardSelectRow, MiniButton, MiniField, MiniHeader, MiniNoticePanel, MiniPage } from '../../components';
+import { RouteName } from '../../constants/routes';
+import { useAuthGuard } from '../../hooks/useAuthGuard';
+import { useSubmitState } from '../../hooks/useSubmitState';
+import { switchTab } from '../../router';
+import { formatDateTime } from '../../shared/utils/date';
 
 export default function RepairRequestPage() {
-  const [draft, setDraft] = useState<RepairRequestDraft>({ repairType: 'CLOCK_IN', reason: '' });
-  const [status, setStatus] = useState('请填写补卡原因。');
+  useAuthGuard();
+
+  const [draft, setDraft] = useState<RepairRequestDraft>({
+    repairType: 'CLOCK_IN',
+    reason: '',
+    targetDate: new Date().toISOString().slice(0, 10),
+  });
+  const { isSubmitting, notice, startSubmitting, submitFailed, submitSucceeded } = useSubmitState();
 
   async function submit() {
+    startSubmitting('正在提交补卡申请...');
+
     try {
-      const result = await createRuntimePages().repairRequest.submit(draft);
-      setStatus(`补卡申请已提交：${result.id}`);
+      await createRuntimeServices().repairRequest.submit(draft);
+      submitSucceeded('补卡申请已提交。');
+      await switchTab(RouteName.REQUESTS);
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : '补卡申请提交失败。');
+      submitFailed(error, '补卡申请提交失败。');
     }
   }
 
   return (
-    <PageShell title="补卡申请" subtitle="补卡通过审批生成修正链路，不直接改写原始打卡记录。">
-      <Card>
-        <Field label="补卡原因" value={draft.reason} placeholder="例如：下班忘记打卡" onInput={(reason) => setDraft({ ...draft, reason })} />
-        <Field label="目标日期" value={draft.targetDate ?? ''} placeholder="YYYY-MM-DD" onInput={(targetDate) => setDraft({ ...draft, targetDate })} />
-        <PrimaryButton onClick={submit}>提交补卡</PrimaryButton>
-      </Card>
-      <StatusText tone={status.includes('失败') ? 'danger' : status.includes('已提交') ? 'success' : 'info'}>{status}</StatusText>
-    </PageShell>
+    <MiniPage compact>
+      <MiniHeader title="补卡申请" back />
+
+      <View className="grid gap-[22px]">
+        <CardSelectRow label="补卡类型" value={draft.repairType === 'CLOCK_OUT' ? '下班补卡' : '上班补卡'} onClick={() => setDraft({ ...draft, repairType: nextRepairType(draft.repairType) })} />
+
+        <MiniField
+          label="目标日期"
+          value={draft.targetDate ?? ''}
+          placeholder="YYYY-MM-DD"
+          onInput={(targetDate) => setDraft({ ...draft, targetDate })}
+        />
+        <MiniField
+          label="补卡时间"
+          value={draft.repairAt ? formatDateTime(draft.repairAt) : ''}
+          placeholder="默认使用当前时间"
+          onInput={(repairAt) => setDraft({ ...draft, repairAt })}
+        />
+        <MiniField
+          label="补卡原因"
+          value={draft.reason}
+          placeholder="请输入补卡原因"
+          onInput={(reason) => setDraft({ ...draft, reason })}
+        />
+
+        <AttachmentUploadPlaceholder />
+
+        {notice ? <MiniNoticePanel notice={notice} /> : null}
+      </View>
+
+      <View className="mt-[34px]">
+        <MiniButton disabled={isSubmitting || !draft.reason || !draft.targetDate} onClick={submit}>
+          {isSubmitting ? '提交中...' : '提交申请'}
+        </MiniButton>
+      </View>
+    </MiniPage>
   );
+}
+
+function nextRepairType(current: RepairType): RepairType {
+  return current === 'CLOCK_OUT' ? 'CLOCK_IN' : 'CLOCK_OUT';
 }

@@ -9,12 +9,16 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@ant-design/icons": "^6.2.3",
+    "@ant-design/pro-components": "^2.8.10",
     "@easy-erp/shared-types": "workspace:*",
     "@radix-ui/react-slot": "^1.2.4",
+    "antd": "^5.29.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
+    "react-router-dom": "^7.15.1",
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {

@@ -78,8 +78,8 @@ export function CrudSection(props: {
   children: React.ReactNode;
 }) {
   return (
-    <Card className="overflow-hidden border-border/80 bg-card/95 shadow-[0_24px_70px_rgba(26,45,36,0.10)]">
-      <CardHeader className="border-b border-border/70 bg-gradient-to-r from-white to-muted/60">
+    <Card className="operation-card overflow-hidden">
+      <CardHeader className="border-b border-border bg-slate-50/80">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <CardTitle>{props.title}</CardTitle>
@@ -115,13 +115,13 @@ export function InlineForm(props: {
   }
 
   return (
-    <div className="mb-5 grid gap-3 rounded-3xl border border-border/70 bg-muted/35 p-4 lg:grid-cols-4">
+    <div className="mb-5 grid gap-3 rounded-lg border border-border bg-slate-50 p-4 lg:grid-cols-4">
       {props.children}
       <Button disabled={props.disabled} onClick={submit}>
         {props.submitText ?? '新建'}
       </Button>
       {error && (
-        <span className="rounded-2xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive lg:col-span-4">
+        <span className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive lg:col-span-4">
           {error}
         </span>
       )}
@@ -136,18 +136,18 @@ export function DataTable<TItem>(props: {
 }) {
   if (props.rows.length === 0) {
     return (
-      <div className="rounded-3xl border border-dashed border-border bg-muted/40 p-8 text-sm text-muted-foreground">
+      <div className="rounded-lg border border-dashed border-border bg-muted/40 p-8 text-sm text-muted-foreground">
         {props.emptyText}
       </div>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-3xl border border-border bg-white">
+    <div className="data-table overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[680px] border-collapse text-sm">
           <thead>
-            <tr className="bg-muted/70 text-left text-xs uppercase tracking-[0.18em] text-muted-foreground">
+            <tr className="text-left text-xs text-muted-foreground">
               {props.columns.map(([label]) => (
                 <th key={label} className="border-b border-border px-4 py-3 font-semibold">
                   {label}
@@ -157,7 +157,7 @@ export function DataTable<TItem>(props: {
           </thead>
           <tbody>
             {props.rows.map((row, index) => (
-              <tr key={index} className="transition-colors hover:bg-muted/35">
+              <tr key={index} className="transition-colors hover:bg-emerald-50/60">
                 {props.columns.map(([label, render]) => (
                   <td key={label} className="border-b border-border/70 px-4 py-3 text-foreground">
                     {render(row)}
@@ -183,7 +183,7 @@ export function ActionPanel(props: {
   return (
     <div
       className={cn(
-        'mb-5 grid gap-3 rounded-3xl border border-border/70 bg-muted/35 p-4 lg:grid-cols-4',
+        'mb-5 grid gap-3 rounded-lg border border-border bg-slate-50 p-4 lg:grid-cols-4',
         props.className,
       )}
     >

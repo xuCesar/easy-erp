@@ -6,6 +6,11 @@ import {
   Prisma,
   PrismaClient,
 } from '@prisma/client';
+import {
+  toPublicApprovalStatus,
+  type ApprovalListItem,
+  type PaginatedResult,
+} from '../approval-view.types';
 
 export type RepairRequestRecord = {
   id: string;
@@ -60,9 +65,22 @@ export type UpdateRepairStatusInput = {
   rejectReason?: string | null;
 };
 
+export type RepairRequestListQuery = {
+  factoryId: string;
+  orgUnitId?: string | null;
+  employeeId?: string | null;
+  status?: ApprovalStatus;
+  page: number;
+  pageSize: number;
+};
+
 export interface RepairRequestRepository {
   create(input: CreateRepairRequestInput): Promise<RepairRequestRecord>;
   findById(tenantId: string, id: string): Promise<RepairRequestRecord | null>;
+  list(
+    tenantId: string,
+    query: RepairRequestListQuery,
+  ): Promise<PaginatedResult<ApprovalListItem>>;
   approveWithManualCheckin(input: {
     tenantId: string;
     id: string;
@@ -122,6 +140,62 @@ export class PrismaRepairRequestRepository
     });
 
     return record ? toRepairRequestRecord(record) : null;
+  }
+
+  async list(
+    tenantId: string,
+    query: RepairRequestListQuery,
+  ): Promise<PaginatedResult<ApprovalListItem>> {
+    const where = {
+      tenantId,
+      factoryId: query.factoryId,
+      deletedAt: null,
+      ...(query.status ? { status: query.status } : {}),
+      ...(query.employeeId ? { employeeId: query.employeeId } : {}),
+      ...(query.orgUnitId
+        ? {
+            employee: {
+              orgUnitId: query.orgUnitId,
+            },
+          }
+        : {}),
+    };
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.repairRequest.findMany({
+        where,
+        include: {
+          employee: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip: (query.page - 1) * query.pageSize,
+        take: query.pageSize,
+      }),
+      this.prisma.repairRequest.count({
+        where,
+      }),
+    ]);
+
+    return {
+      items: items.map((item) => ({
+        id: item.id,
+        type: 'REPAIR',
+        employeeId: item.employeeId,
+        employeeName: item.employee.name,
+        empNo: item.employee.empNo,
+        status: toPublicApprovalStatus(item.status),
+        reason: item.reason,
+        createdAt: item.createdAt.toISOString(),
+        targetDate: item.targetDate.toISOString().slice(0, 10),
+        repairAt: item.repairAt.toISOString(),
+        requestType: item.repairType,
+      })),
+      total,
+      page: query.page,
+      pageSize: query.pageSize,
+      totalPages: Math.ceil(total / query.pageSize),
+    };
   }
 
   async approveWithManualCheckin(input: {
