@@ -50,16 +50,26 @@ export interface RetryPolicy {
 }
 
 export type Role = 'TENANT_ADMIN' | 'HR_ADMIN' | 'ORG_MANAGER' | 'EMPLOYEE';
-export type EntityStatus = 'ACTIVE' | 'INACTIVE' | 'RESIGNED';
+export type AccountStatus = 'ACTIVE' | 'DISABLED';
+export type EntityStatus = 'ACTIVE' | 'DISABLED';
+export type EmployeeStatus = 'ACTIVE' | 'INACTIVE' | 'RESIGNED';
 export type OrgUnitType = 'FACTORY' | 'DEPARTMENT' | 'GROUP';
 export type CheckinMethod = 'GPS' | 'WIFI' | 'PHOTO';
 export type CheckinType = 'CLOCK_IN' | 'CLOCK_OUT';
 export type NextCheckinAction = CheckinType | 'NONE';
-export type AttendancePrimaryStatus = 'NORMAL' | 'LATE' | 'EARLY_LEAVE' | 'ABSENT' | 'LEAVE' | 'MISSING_CLOCK';
+export type AttendancePrimaryStatus = 'NORMAL' | 'ABNORMAL' | 'ABSENT' | 'LEAVE' | 'REST' | 'HOLIDAY';
 export type LeaveType = 'PERSONAL' | 'SICK' | 'ANNUAL' | 'OTHER';
 export type RepairType = CheckinType;
 export type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 export type ReportTaskStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
+export type DataScopeType = 'TENANT' | 'FACTORY' | 'ORG_UNIT' | 'EMPLOYEE';
+
+export interface DataScope {
+  type: DataScopeType;
+  factoryId?: string;
+  orgUnitId?: string;
+  employeeId?: string;
+}
 
 export interface LoginRequest {
   phone: string;
@@ -79,6 +89,62 @@ export interface CurrentUser {
   employeeId: string | null;
   roles: Role[];
 }
+
+export interface FactoryOption {
+  id: string;
+  name: string;
+  timezone: string;
+  status: Exclude<EntityStatus, 'RESIGNED'>;
+}
+
+export interface CurrentUserProfile {
+  user: CurrentUser & {
+    phone: string;
+    status: AccountStatus;
+    dataScopes: DataScope[];
+  };
+  employee: EmployeeProfile | null;
+  factories: FactoryOption[];
+  orgUnits: OrgUnit[];
+  defaultScope: {
+    factoryId: string | null;
+    orgUnitId: string | null;
+  };
+}
+
+export interface AccountUserListItem {
+  id: string;
+  phone: string;
+  employeeId: string | null;
+  employeeName: string | null;
+  roles: Role[];
+  status: AccountStatus;
+  lastLoginAt: string | null;
+  createdAt: string;
+}
+
+export interface AccountUserQuery {
+  keyword?: string;
+  status?: AccountStatus;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface CreateAccountUserRequest {
+  phone: string;
+  password: string;
+  employeeId: string | null;
+  roles: Role[];
+  status: AccountStatus;
+}
+
+export type UpdateAccountUserRequest = Partial<{
+  phone: string;
+  password: string;
+  employeeId: string | null;
+  roles: Role[];
+  status: AccountStatus;
+}>;
 
 export interface OrgUnit {
   id: string;
@@ -116,13 +182,13 @@ export interface EmployeeProfile {
   name: string;
   phone: string;
   entryDate: string;
-  status: EntityStatus;
+  status: EmployeeStatus;
 }
 
 export interface EmployeeQuery {
   factoryId: string;
   orgUnitId?: string | null;
-  status?: EntityStatus;
+  status?: EmployeeStatus;
   keyword?: string;
   page?: number;
   pageSize?: number;
@@ -135,7 +201,7 @@ export interface CreateEmployeeRequest {
   name: string;
   phone: string;
   entryDate: string;
-  status: EntityStatus;
+  status: EmployeeStatus;
 }
 
 export type UpdateEmployeeRequest = Partial<Omit<CreateEmployeeRequest, 'factoryId'>>;
@@ -188,7 +254,19 @@ export interface AssignAttendanceGroupMembersRequest {
 export interface CheckinContext {
   date: string;
   shift: Pick<Shift, 'id' | 'name' | 'startTime' | 'endTime' | 'crossDay'>;
-  attendanceGroup: Pick<AttendanceGroup, 'id' | 'name' | 'checkinMethods' | 'requirePhoto'>;
+  attendanceGroup: Pick<
+    AttendanceGroup,
+    | 'id'
+    | 'name'
+    | 'checkinMethods'
+    | 'gpsLat'
+    | 'gpsLng'
+    | 'gpsRadiusMeters'
+    | 'wifiSsid'
+    | 'wifiBssid'
+    | 'requirePhoto'
+    | 'allowOutsideCheckin'
+  >;
   status: {
     clockInAt: string | null;
     clockOutAt: string | null;
@@ -258,6 +336,25 @@ export interface RecalculateAttendanceRequest {
   reason: string;
 }
 
+export interface ApprovalItem {
+  id: string;
+  type: 'LEAVE' | 'REPAIR';
+  factoryId: string;
+  employeeId: string;
+  employeeName: string;
+  empNo: string;
+  status: ApprovalStatus;
+  reason: string;
+  createdAt: string;
+  startAt?: string;
+  endAt?: string;
+  durationHours?: number;
+  leaveType?: LeaveType;
+  targetDate?: string;
+  repairAt?: string;
+  repairType?: RepairType;
+}
+
 export interface LeaveRequestCreateRequest {
   leaveType: LeaveType;
   startAt: string;
@@ -298,15 +395,6 @@ export interface ApprovalActionRequest {
 
 export interface RejectActionRequest {
   rejectReason: string;
-}
-
-export interface ApprovalItem {
-  id: string;
-  employeeId: string;
-  employeeName: string;
-  status: ApprovalStatus;
-  reason: string;
-  createdAt: string;
 }
 
 export interface MonthlyReportQuery {

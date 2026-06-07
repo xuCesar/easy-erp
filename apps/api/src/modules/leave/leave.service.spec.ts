@@ -6,7 +6,9 @@ import type { AuthPrincipal } from '../../core/auth';
 import type { EmployeeRecord, EmployeeRepository } from '../employee';
 import { LeaveService } from './leave.service';
 import type {
+  ApprovalListQuery,
   CreateLeaveRequestInput,
+  LeaveApprovalListItem,
   LeaveRequestRecord,
   LeaveRequestRepository,
 } from './leave.repository';
@@ -140,6 +142,24 @@ class FakeLeaveRequestRepository implements LeaveRequestRepository {
   ): Promise<LeaveRequestRecord | null> {
     const record = this.records.get(id);
     return record?.tenantId === tenantId ? record : null;
+  }
+
+  async list(
+    tenantId: string,
+    query: ApprovalListQuery,
+  ): Promise<{ items: LeaveApprovalListItem[]; total: number }> {
+    const items = [...this.records.values()]
+      .filter((record) => record.tenantId === tenantId)
+      .filter((record) => record.factoryId === query.factoryId)
+      .filter((record) => !query.status || record.status === query.status)
+      .map((record) => ({
+        ...record,
+        employeeName: '张三',
+        empNo: 'E001',
+        orgUnitId: 'org-1',
+      }));
+
+    return { items, total: items.length };
   }
 
   async updateStatus(

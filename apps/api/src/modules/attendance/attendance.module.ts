@@ -16,15 +16,15 @@ import { CheckinController } from './checkin/checkin.controller';
 import { PrismaCheckinRepository } from './checkin/checkin.repository';
 import { CheckinService } from './checkin/checkin.service';
 import {
+  AttendanceResultController,
   AttendanceRecalculationService,
   AttendanceResultService,
   PrismaAttendanceResultRepository,
 } from './result';
-
-export const checkinRepositoryToken = Symbol('CheckinRepository');
-export const attendanceResultRepositoryToken = Symbol(
-  'AttendanceResultRepository',
-);
+import {
+  attendanceResultRepositoryToken,
+  checkinRepositoryToken,
+} from './attendance.tokens';
 
 @Module({
   imports: [
@@ -34,7 +34,7 @@ export const attendanceResultRepositoryToken = Symbol(
     ShiftModule,
     EmployeeModule,
   ],
-  controllers: [CheckinController],
+  controllers: [CheckinController, AttendanceResultController],
   providers: [
     PrismaCheckinRepository,
     {

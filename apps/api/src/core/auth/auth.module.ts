@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 import { PasswordService } from './password.service';
 import { PrismaRefreshTokenStore } from './refresh-token.store';
 import { TokenService } from './token.service';
+import { WorkspaceRepository } from './workspace.repository';
 import type { AccountRepository } from '../account';
 
 @Module({
@@ -16,6 +17,7 @@ import type { AccountRepository } from '../account';
     PasswordService,
     TokenService,
     PrismaRefreshTokenStore,
+    WorkspaceRepository,
     {
       provide: AuthService,
       useFactory: (
@@ -23,18 +25,21 @@ import type { AccountRepository } from '../account';
         passwordService: PasswordService,
         tokenService: TokenService,
         refreshTokenStore: PrismaRefreshTokenStore,
+        workspaceRepository: WorkspaceRepository,
       ) =>
         new AuthService(
           accountRepository,
           passwordService,
           tokenService,
           refreshTokenStore,
+          workspaceRepository,
         ),
       inject: [
         accountRepositoryToken,
         PasswordService,
         TokenService,
         PrismaRefreshTokenStore,
+        WorkspaceRepository,
       ],
     },
   ],

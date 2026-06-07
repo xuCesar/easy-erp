@@ -3,8 +3,10 @@ import {
   Body,
   Controller,
   ForbiddenException,
+  Get,
   Param,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -22,6 +24,31 @@ type AuthenticatedRequest = {
 @UseGuards(AccessTokenGuard, PermissionGuard)
 export class LeaveController {
   constructor(private readonly leaveService: LeaveService) {}
+
+  @Get()
+  @RequirePermission('leave:request:view')
+  async list(
+    @Req() req: AuthenticatedRequest,
+    @Query('factoryId') factoryId?: string,
+    @Query('status') status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'REVOKED' | 'DRAFT',
+    @Query('keyword') keyword?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ): Promise<unknown> {
+    if (!factoryId) {
+      throw new BadRequestException('factoryId is required.');
+    }
+
+    return ok(
+      await this.leaveService.list(req.user, {
+        factoryId,
+        status,
+        keyword: keyword ?? null,
+        page: parsePositiveInt(page, 1),
+        pageSize: Math.min(parsePositiveInt(pageSize, 20), 100),
+      }),
+    );
+  }
 
   @Post()
   @RequirePermission('leave:request:create')
@@ -91,6 +118,12 @@ function assertCreateBody(body: LeaveRequestBody): void {
   if (!body?.factoryId || !body.leaveType || !body.startAt || !body.endAt) {
     throw new BadRequestException('Invalid leave request.');
   }
+}
+
+function parsePositiveInt(value: string | undefined, fallback: number): number {
+  const parsed = Number(value);
+
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 function ok<T>(

@@ -10,11 +10,36 @@ import { PermissionService } from '../../core/permission';
 import type { AttendanceRecalculationPort } from '../attendance';
 import type { EmployeeRepository } from '../employee';
 import type {
+  ApprovalListQuery,
   CreateRepairRequestInput,
   RepairApprovalResult,
+  RepairApprovalListItem,
   RepairRequestRecord,
   RepairRequestRepository,
 } from './repair.repository';
+
+export type ApprovalItem = {
+  id: string;
+  type: 'REPAIR';
+  factoryId: string;
+  employeeId: string;
+  employeeName: string;
+  empNo: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'REVOKED' | 'DRAFT';
+  reason: string;
+  createdAt: string;
+  targetDate: string;
+  repairAt: string;
+  repairType: string;
+};
+
+export type ApprovalPage = {
+  items: ApprovalItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
 
 @Injectable()
 export class RepairService {
@@ -27,6 +52,24 @@ export class RepairService {
 
   async create(input: CreateRepairRequestInput): Promise<RepairRequestRecord> {
     return this.repository.create(input);
+  }
+
+  async list(
+    principal: AuthPrincipal,
+    query: ApprovalListQuery,
+  ): Promise<ApprovalPage> {
+    const result = await this.repository.list(principal.tenantId, query);
+    const items = result.items
+      .filter((item) => this.canAccessListItem(principal, item))
+      .map(toApprovalItem);
+
+    return {
+      items,
+      total: items.length,
+      page: query.page,
+      pageSize: query.pageSize,
+      totalPages: Math.ceil(items.length / query.pageSize),
+    };
   }
 
   async approve(
@@ -137,6 +180,35 @@ export class RepairService {
       throw new ForbiddenException('Permission denied for target employee.');
     }
   }
+
+  private canAccessListItem(
+    principal: AuthPrincipal,
+    request: RepairApprovalListItem,
+  ): boolean {
+    return this.permissionService.canAccessResource(principal, {
+      tenantId: request.tenantId,
+      factoryId: request.factoryId,
+      employeeId: request.employeeId,
+      orgUnitId: request.orgUnitId,
+    });
+  }
+}
+
+function toApprovalItem(request: RepairApprovalListItem): ApprovalItem {
+  return {
+    id: request.id,
+    type: 'REPAIR',
+    factoryId: request.factoryId,
+    employeeId: request.employeeId,
+    employeeName: request.employeeName,
+    empNo: request.empNo,
+    status: request.status,
+    reason: request.reason,
+    createdAt: request.createdAt.toISOString(),
+    targetDate: request.targetDate.toISOString().slice(0, 10),
+    repairAt: request.repairAt.toISOString(),
+    repairType: request.repairType,
+  };
 }
 
 function assertTransition(

@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type {
+  AccountUserListItem,
   ApprovalItem,
+  AttendancePrimaryStatus,
   AttendanceGroup,
   AttendanceResultRow,
+  CurrentUserProfile,
   EmployeeProfile,
   LoginRequest,
   LoginResponse,
@@ -10,6 +13,7 @@ import type {
   OrgUnit,
   PaginatedData,
   Shift,
+  ApprovalStatus,
 } from '@easy-erp/shared-types';
 import { createAdminDashboardPage } from './pages';
 import { requestData, toAdminFeedback, type AdminDashboardScope } from './pages/common';
@@ -22,6 +26,7 @@ import {
 } from './api/client';
 import { SessionPanel } from './components/ui';
 import {
+  AccountsSection,
   ApprovalsSection,
   AttendanceGroupsSection,
   AttendanceResultsSection,
@@ -54,6 +59,7 @@ const initialData: AdminDataState = {
   attendanceResults: emptyPage<AttendanceResultRow>(),
   leaveApprovals: emptyPage<ApprovalItem>(),
   repairApprovals: emptyPage<ApprovalItem>(),
+  accounts: emptyPage<AccountUserListItem>(),
   monthlyReport: emptyPage<MonthlyReportRow>(),
 };
 
@@ -64,11 +70,13 @@ const navigation: Array<{ key: SectionKey; label: string }> = [
   { key: 'attendanceGroups', label: '考勤组' },
   { key: 'attendanceResults', label: '考勤结果' },
   { key: 'approvals', label: '审批' },
+  { key: 'accounts', label: '账号' },
   { key: 'monthlyReport', label: '月报' },
 ];
 
 export function App() {
   const [session, setSession] = useState<AdminSession | null>(() => loadSession());
+  const [profile, setProfile] = useState<CurrentUserProfile | null>(null);
   const [scope, setScope] = useState<AdminDashboardScope>(defaultScope);
   const [activeSection, setActiveSection] = useState<SectionKey>('organization');
   const [data, setData] = useState<AdminDataState>(initialData);
@@ -76,10 +84,18 @@ export function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [loginForm, setLoginForm] = useState<LoginRequest>({ phone: '', password: '' });
   const [taskId, setTaskId] = useState('');
+  const [approvalStatus, setApprovalStatus] = useState<ApprovalStatus>('PENDING');
+  const [resultStatus, setResultStatus] = useState('');
 
   const client = new FetchApiClient('', () => session);
   const dashboard = createAdminDashboardPage(client, scope);
   const canManage = Boolean(session?.roles.some((role) => role === 'TENANT_ADMIN' || role === 'HR_ADMIN'));
+
+  useEffect(() => {
+    if (session && !profile) {
+      void loadProfile(session).catch((error) => setStatus(toAdminFeedback(error).message));
+    }
+  }, [session, profile]);
 
   async function login() {
     setIsLoading(true);
@@ -97,12 +113,26 @@ export function App() {
 
       saveSession(nextSession);
       setSession(nextSession);
-      setStatus('登录成功，请设置工厂 ID 后加载数据。');
+      await loadProfile(nextSession);
+      setStatus('登录成功，已加载默认工作范围。');
     } catch (error) {
       setStatus(toAdminFeedback(error).message);
     } finally {
       setIsLoading(false);
     }
+  }
+
+  async function loadProfile(nextSession = session) {
+    const profileClient = new FetchApiClient('', () => nextSession);
+    const nextProfile = await requestData(profileClient.get<CurrentUserProfile>('/api/v1/auth/me'));
+    const firstFactoryId = nextProfile.defaultScope.factoryId ?? nextProfile.factories[0]?.id ?? '';
+
+    setProfile(nextProfile);
+    setScope((current) => ({
+      ...current,
+      factoryId: firstFactoryId,
+      orgUnitId: nextProfile.defaultScope.orgUnitId,
+    }));
   }
 
   async function loadDashboard() {
@@ -122,13 +152,23 @@ export function App() {
       shifts,
       attendanceGroups,
       attendanceResults,
+      leaveApprovals,
+      repairApprovals,
+      accounts,
       monthlyReport,
     ] = await Promise.allSettled([
       dashboard.organization.load(),
       dashboard.employees.search(),
       dashboard.shifts.load(),
       dashboard.attendanceGroups.load(),
-      dashboard.attendanceResults.search({ startDate: monthStart, endDate: today }),
+      dashboard.attendanceResults.search({
+        startDate: monthStart,
+        endDate: today,
+        ...(resultStatus ? { primaryStatus: resultStatus as AttendancePrimaryStatus } : {}),
+      }),
+      dashboard.leaveApprovals.list({ status: approvalStatus }),
+      dashboard.repairApprovals.list({ status: approvalStatus }),
+      dashboard.accounts.list(),
       dashboard.monthlyReport.load(),
     ]);
 
@@ -139,6 +179,9 @@ export function App() {
       shifts: valueOr(shifts, []),
       attendanceGroups: valueOr(attendanceGroups, []),
       attendanceResults: valueOr(attendanceResults, emptyPage<AttendanceResultRow>()),
+      leaveApprovals: valueOr(leaveApprovals, emptyPage()),
+      repairApprovals: valueOr(repairApprovals, emptyPage()),
+      accounts: valueOr(accounts, emptyPage<AccountUserListItem>()),
       monthlyReport: valueOr(monthlyReport, emptyPage<MonthlyReportRow>()),
     }));
     setStatus('数据加载完成；单个接口失败时会保留空态，避免影响其他模块演示。');
@@ -148,6 +191,7 @@ export function App() {
   function logout() {
     clearSession();
     setSession(null);
+    setProfile(null);
     setData(initialData);
     setStatus('已退出登录。');
   }
@@ -174,20 +218,30 @@ export function App() {
 
       <section className="controlPanel">
         <label>
-          工厂 ID
-          <input
+          工厂
+          <select
             value={scope.factoryId}
-            placeholder="factory uuid"
             onChange={(event) => setScope({ ...scope, factoryId: event.target.value })}
-          />
+          >
+            <option value="">请选择工厂</option>
+            {profile?.factories.map((factory) => (
+              <option key={factory.id} value={factory.id}>{factory.name}</option>
+            ))}
+          </select>
         </label>
         <label>
-          组织 ID（可选）
-          <input
+          组织
+          <select
             value={scope.orgUnitId ?? ''}
-            placeholder="org unit uuid"
             onChange={(event) => setScope({ ...scope, orgUnitId: event.target.value || null })}
-          />
+          >
+            <option value="">全部组织</option>
+            {profile?.orgUnits
+              .filter((unit) => unit.factoryId === scope.factoryId)
+              .map((unit) => (
+                <option key={unit.id} value={unit.id}>{unit.name}</option>
+              ))}
+          </select>
         </label>
         <label>
           月份
@@ -237,9 +291,36 @@ export function App() {
               onChanged={loadDashboard}
             />
           )}
-          {activeSection === 'attendanceResults' && <AttendanceResultsSection data={data.attendanceResults} />}
+          {activeSection === 'attendanceResults' && (
+            <AttendanceResultsSection
+              data={data.attendanceResults}
+              resultStatus={resultStatus}
+              setResultStatus={setResultStatus}
+              onReload={loadDashboard}
+            />
+          )}
           {activeSection === 'approvals' && (
-            <ApprovalsSection client={client} scope={scope} canManage={canManage} onStatus={setStatus} />
+            <ApprovalsSection
+              client={client}
+              scope={scope}
+              leaveData={data.leaveApprovals}
+              repairData={data.repairApprovals}
+              approvalStatus={approvalStatus}
+              setApprovalStatus={setApprovalStatus}
+              canManage={canManage}
+              onStatus={setStatus}
+              onChanged={loadDashboard}
+            />
+          )}
+          {activeSection === 'accounts' && (
+            <AccountsSection
+              dashboard={dashboard}
+              data={data.accounts}
+              employees={data.employees.items}
+              canManage={canManage}
+              onChanged={loadDashboard}
+              onStatus={setStatus}
+            />
           )}
           {activeSection === 'monthlyReport' && (
             <MonthlyReportSection

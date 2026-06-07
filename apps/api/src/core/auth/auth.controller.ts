@@ -1,12 +1,26 @@
-import { BadRequestException, Body, Controller, Post } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
+import { AccessTokenGuard } from './access-token.guard';
 import { AuthService } from './auth.service';
 import type {
+  AuthPrincipal,
   AuthTokenResponse,
   LoginRequest,
   LogoutRequest,
   RefreshRequest,
 } from './auth.types';
+
+type AuthenticatedRequest = {
+  user: AuthPrincipal;
+};
 
 type ApiSuccessResponse<T> = {
   code: 0;
@@ -50,6 +64,12 @@ export class AuthController {
     await this.authService.logout(body);
 
     return ok(null);
+  }
+
+  @Get('me')
+  @UseGuards(AccessTokenGuard)
+  async me(@Req() req: AuthenticatedRequest): Promise<ApiSuccessResponse<unknown>> {
+    return ok(await this.authService.getCurrentUserProfile(req.user));
   }
 
   private assertLoginRequest(body: LoginRequest): void {

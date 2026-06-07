@@ -4,7 +4,15 @@ import { AuthService } from './auth.service';
 import { PasswordService } from './password.service';
 import { TokenService } from './token.service';
 import { InMemoryRefreshTokenStore } from './refresh-token.store';
-import type { AccountAuthRecord, AccountRepository } from '../account/account.repository';
+import type {
+  AccountAuthRecord,
+  AccountListRecord,
+  AccountRepository,
+  AccountListQuery,
+  CreateAccountInput,
+  UpdateAccountInput,
+} from '../account/account.repository';
+import type { WorkspaceRepository } from './workspace.repository';
 
 const activeAccount: AccountAuthRecord = {
   id: 'user-1',
@@ -34,7 +42,38 @@ class FakeAccountRepository implements AccountRepository {
   }
 
   async markLastLogin(_accountId: string, _loggedInAt: Date): Promise<void> {}
+
+  async list(
+    _tenantId: string,
+    _query: AccountListQuery,
+  ): Promise<{ items: AccountListRecord[]; total: number }> {
+    return { items: [], total: 0 };
+  }
+
+  async create(_input: CreateAccountInput): Promise<AccountListRecord> {
+    throw new Error('Not implemented in auth tests.');
+  }
+
+  async update(
+    _tenantId: string,
+    _accountId: string,
+    _input: UpdateAccountInput,
+  ): Promise<AccountListRecord> {
+    throw new Error('Not implemented in auth tests.');
+  }
 }
+
+const emptyWorkspaceRepository = {
+  async listFactories() {
+    return [];
+  },
+  async listOrgUnits() {
+    return [];
+  },
+  async findEmployee() {
+    return null;
+  },
+} as unknown as WorkspaceRepository;
 
 describe('AuthService', () => {
   it('logs in an active account and returns tokens plus principal data', async () => {
@@ -54,6 +93,7 @@ describe('AuthService', () => {
         refreshSecret: 'refresh-secret',
       }),
       new InMemoryRefreshTokenStore(),
+      emptyWorkspaceRepository,
     );
 
     const result = await service.login({
@@ -90,6 +130,7 @@ describe('AuthService', () => {
         refreshSecret: 'refresh-secret',
       }),
       new InMemoryRefreshTokenStore(),
+      emptyWorkspaceRepository,
     );
 
     await expect(
@@ -118,6 +159,7 @@ describe('AuthService', () => {
         refreshSecret: 'refresh-secret',
       }),
       refreshTokenStore,
+      emptyWorkspaceRepository,
     );
     const loginResult = await service.login({
       phone: '13800000000',

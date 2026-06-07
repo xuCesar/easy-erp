@@ -6,9 +6,11 @@ import { PermissionService } from '../../core/permission';
 import type { EmployeeRecord, EmployeeRepository } from '../employee';
 import { RepairService } from './repair.service';
 import type {
+  ApprovalListQuery,
   CreateRepairRequestInput,
   ManualCheckinInput,
   RepairApprovalResult,
+  RepairApprovalListItem,
   RepairRequestRecord,
   RepairRequestRepository,
 } from './repair.repository';
@@ -148,6 +150,24 @@ class FakeRepairRequestRepository implements RepairRequestRepository {
   ): Promise<RepairRequestRecord | null> {
     const record = this.records.get(id);
     return record?.tenantId === tenantId ? record : null;
+  }
+
+  async list(
+    tenantId: string,
+    query: ApprovalListQuery,
+  ): Promise<{ items: RepairApprovalListItem[]; total: number }> {
+    const items = [...this.records.values()]
+      .filter((record) => record.tenantId === tenantId)
+      .filter((record) => record.factoryId === query.factoryId)
+      .filter((record) => !query.status || record.status === query.status)
+      .map((record) => ({
+        ...record,
+        employeeName: '张三',
+        empNo: 'E001',
+        orgUnitId: 'org-1',
+      }));
+
+    return { items, total: items.length };
   }
 
   async approveWithManualCheckin(input: {

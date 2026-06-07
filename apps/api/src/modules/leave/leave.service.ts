@@ -11,9 +11,35 @@ import type { AttendanceRecalculationPort } from '../attendance';
 import type { EmployeeRepository } from '../employee';
 import type {
   CreateLeaveRequestInput,
+  ApprovalListQuery,
+  LeaveApprovalListItem,
   LeaveRequestRecord,
   LeaveRequestRepository,
 } from './leave.repository';
+
+export type ApprovalItem = {
+  id: string;
+  type: 'LEAVE';
+  factoryId: string;
+  employeeId: string;
+  employeeName: string;
+  empNo: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'REVOKED' | 'DRAFT';
+  reason: string;
+  createdAt: string;
+  startAt: string;
+  endAt: string;
+  durationHours: number;
+  leaveType: string;
+};
+
+export type ApprovalPage = {
+  items: ApprovalItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
 
 @Injectable()
 export class LeaveService {
@@ -26,6 +52,25 @@ export class LeaveService {
 
   async create(input: CreateLeaveRequestInput): Promise<LeaveRequestRecord> {
     return this.repository.create(input);
+  }
+
+  async list(
+    principal: AuthPrincipal,
+    query: ApprovalListQuery,
+  ): Promise<ApprovalPage> {
+    const result = await this.repository.list(principal.tenantId, query);
+    const items = result.items
+      .filter((item) => this.canAccessListItem(principal, item))
+      .map(toApprovalItem);
+
+    return {
+      items,
+      // 当前页再做权限过滤，避免普通主管看到越权记录；total 按过滤后返回，语义更贴近用户实际可见数据。
+      total: items.length,
+      page: query.page,
+      pageSize: query.pageSize,
+      totalPages: Math.ceil(items.length / query.pageSize),
+    };
   }
 
   async approve(
@@ -124,6 +169,18 @@ export class LeaveService {
     }
   }
 
+  private canAccessListItem(
+    principal: AuthPrincipal,
+    request: LeaveApprovalListItem,
+  ): boolean {
+    return this.permissionService.canAccessResource(principal, {
+      tenantId: request.tenantId,
+      factoryId: request.factoryId,
+      employeeId: request.employeeId,
+      orgUnitId: request.orgUnitId,
+    });
+  }
+
   private async recalculateAffectedDates(
     request: LeaveRequestRecord,
   ): Promise<void> {
@@ -141,6 +198,24 @@ export class LeaveService {
       ),
     );
   }
+}
+
+function toApprovalItem(request: LeaveApprovalListItem): ApprovalItem {
+  return {
+    id: request.id,
+    type: 'LEAVE',
+    factoryId: request.factoryId,
+    employeeId: request.employeeId,
+    employeeName: request.employeeName,
+    empNo: request.empNo,
+    status: request.status,
+    reason: request.reason,
+    createdAt: request.createdAt.toISOString(),
+    startAt: request.startAt.toISOString(),
+    endAt: request.endAt.toISOString(),
+    durationHours: request.durationHours,
+    leaveType: request.leaveType,
+  };
 }
 
 function assertTransition(

@@ -1,5 +1,6 @@
 import type {
   ApprovalItem,
+  AccountUserListItem,
   AttendanceGroup,
   AttendanceResultRow,
   EmployeeProfile,
@@ -16,6 +17,7 @@ export type SectionKey =
   | 'attendanceGroups'
   | 'attendanceResults'
   | 'approvals'
+  | 'accounts'
   | 'monthlyReport';
 
 export interface AdminDataState {
@@ -26,5 +28,6 @@ export interface AdminDataState {
   attendanceResults: PaginatedData<AttendanceResultRow>;
   leaveApprovals: PaginatedData<ApprovalItem>;
   repairApprovals: PaginatedData<ApprovalItem>;
+  accounts: PaginatedData<AccountUserListItem>;
   monthlyReport: PaginatedData<MonthlyReportRow>;
 }

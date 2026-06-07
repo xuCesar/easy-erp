@@ -6,6 +6,8 @@ import type {
 } from '../calculator/attendance-calculator.types';
 import { AttendanceResultService } from './attendance-result.service';
 import type {
+  AttendanceResultListItem,
+  AttendanceResultListQuery,
   AttendanceResultRecord,
   AttendanceResultRepository,
 } from './attendance-result.repository';
@@ -69,6 +71,13 @@ class FakeAttendanceResultRepository implements AttendanceResultRepository {
       ...baseResultRecord(),
       ...input,
     };
+  }
+
+  async list(
+    _tenantId: string,
+    _query: AttendanceResultListQuery,
+  ): Promise<{ items: AttendanceResultListItem[]; total: number }> {
+    return { items: [], total: 0 };
   }
 }
 

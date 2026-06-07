@@ -1,5 +1,5 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { AttendancePrimaryStatus, PrismaClient } from '@prisma/client';
 import type { AttendanceCalculationResult } from '../calculator/attendance-calculator.types';
 
 export type AttendanceResultRecord = AttendanceCalculationResult & {
@@ -11,6 +11,23 @@ export type AttendanceResultRecord = AttendanceCalculationResult & {
   deletedAt: Date | null;
 };
 
+export type AttendanceResultListQuery = {
+  factoryId: string;
+  employeeId?: string | null;
+  orgUnitId?: string | null;
+  startDate: string;
+  endDate: string;
+  primaryStatus?: AttendancePrimaryStatus;
+  page: number;
+  pageSize: number;
+};
+
+export type AttendanceResultListItem = AttendanceResultRecord & {
+  employeeName: string;
+  empNo: string;
+  orgUnitId: string | null;
+};
+
 export interface AttendanceResultRepository {
   findByEmployeeAndDate(
     tenantId: string,
@@ -18,6 +35,10 @@ export interface AttendanceResultRepository {
     date: string,
   ): Promise<AttendanceResultRecord | null>;
   upsert(input: AttendanceCalculationResult): Promise<AttendanceResultRecord>;
+  list(
+    tenantId: string,
+    query: AttendanceResultListQuery,
+  ): Promise<{ items: AttendanceResultListItem[]; total: number }>;
 }
 
 @Injectable()
@@ -68,6 +89,61 @@ export class PrismaAttendanceResultRepository
     });
 
     return toAttendanceResultRecord(result);
+  }
+
+  async list(
+    tenantId: string,
+    query: AttendanceResultListQuery,
+  ): Promise<{ items: AttendanceResultListItem[]; total: number }> {
+    const where = {
+      tenantId,
+      factoryId: query.factoryId,
+      deletedAt: null,
+      date: {
+        gte: dateOnly(query.startDate),
+        lte: dateOnly(query.endDate),
+      },
+      ...(query.employeeId ? { employeeId: query.employeeId } : {}),
+      ...(query.primaryStatus ? { primaryStatus: query.primaryStatus } : {}),
+      ...(query.orgUnitId
+        ? {
+            employee: {
+              orgUnitId: query.orgUnitId,
+            },
+          }
+        : {}),
+    };
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.attendanceResult.findMany({
+        where,
+        include: {
+          employee: {
+            select: {
+              name: true,
+              empNo: true,
+              orgUnitId: true,
+            },
+          },
+        },
+        orderBy: [
+          { date: 'desc' },
+          { createdAt: 'desc' },
+        ],
+        skip: (query.page - 1) * query.pageSize,
+        take: query.pageSize,
+      }),
+      this.prisma.attendanceResult.count({ where }),
+    ]);
+
+    return {
+      items: items.map((item) => ({
+        ...toAttendanceResultRecord(item),
+        employeeName: item.employee.name,
+        empNo: item.employee.empNo,
+        orgUnitId: item.employee.orgUnitId,
+      })),
+      total,
+    };
   }
 }
 
