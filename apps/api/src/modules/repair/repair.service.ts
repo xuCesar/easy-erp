@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -10,12 +9,6 @@ import type { AuthPrincipal } from '../../core/auth';
 import { PermissionService } from '../../core/permission';
 import type { AttendanceRecalculationPort } from '../attendance';
 import type { EmployeeRepository } from '../employee';
-import {
-  toPrismaApprovalStatus,
-  type ApprovalListItem,
-  type ApprovalListQuery,
-  type PaginatedResult,
-} from '../approval-view.types';
 import type {
   CreateRepairRequestInput,
   RepairApprovalResult,
@@ -34,14 +27,6 @@ export class RepairService {
 
   async create(input: CreateRepairRequestInput): Promise<RepairRequestRecord> {
     return this.repository.create(input);
-  }
-
-  async list(
-    principal: AuthPrincipal,
-    query: ApprovalListQuery,
-  ): Promise<PaginatedResult<ApprovalListItem>> {
-    const scopedQuery = this.toScopedListQuery(principal, query);
-    return this.repository.list(principal.tenantId, scopedQuery);
   }
 
   async approve(
@@ -152,44 +137,6 @@ export class RepairService {
       throw new ForbiddenException('Permission denied for target employee.');
     }
   }
-
-  private toScopedListQuery(
-    principal: AuthPrincipal,
-    query: ApprovalListQuery,
-  ): {
-    factoryId: string;
-    orgUnitId?: string | null;
-    employeeId?: string | null;
-    status?: ApprovalStatus;
-    page: number;
-    pageSize: number;
-  } {
-    if (!query.factoryId) {
-      throw new BadRequestException('factoryId is required.');
-    }
-
-    const employeeScope = principal.dataScopes.find((scope) => scope.type === 'EMPLOYEE');
-
-    if (
-      !this.permissionService.canAccessResource(principal, {
-        tenantId: principal.tenantId,
-        factoryId: query.factoryId,
-        orgUnitId: query.orgUnitId ?? null,
-        employeeId: employeeScope?.employeeId ?? null,
-      })
-    ) {
-      throw new ForbiddenException('Permission denied for target scope.');
-    }
-
-    return {
-      factoryId: query.factoryId,
-      orgUnitId: employeeScope ? null : query.orgUnitId ?? null,
-      employeeId: employeeScope?.employeeId ?? null,
-      status: query.status ? toPrismaApprovalStatus(query.status) : undefined,
-      page: normalizePage(query.page),
-      pageSize: normalizePageSize(query.pageSize),
-    };
-  }
 }
 
 function assertTransition(
@@ -216,12 +163,4 @@ function assertTransition(
 
 function toDateString(value: Date): string {
   return value.toISOString().slice(0, 10);
-}
-
-function normalizePage(page: number | undefined): number {
-  return Math.max(1, page ?? 1);
-}
-
-function normalizePageSize(pageSize: number | undefined): number {
-  return Math.min(100, Math.max(1, pageSize ?? 20));
 }

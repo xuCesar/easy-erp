@@ -1,6 +1,6 @@
 # Phase 1.5 Pilot Deployment Runbook
 
-本文档用于把一个空的 Phase 1.5/1.6 环境初始化到可演示、可冒烟验收的状态。当前范围面向单租户、单工厂试点，不包含生产级对象存储、队列任务和多工厂初始化。
+本文档用于把一个空的 Phase 1.5 环境初始化到可演示、可冒烟验收的状态。当前范围面向单租户、单工厂试点，不包含生产级对象存储、队列任务和多工厂初始化。
 
 ## 1. 前置条件
 
@@ -108,28 +108,7 @@ curl -s "http://127.0.0.1:3000/api/v1/reports/monthly?factoryId=22222222-2222-42
   -H "Authorization: Bearer <accessToken>"
 ```
 
-## 5. CI 冒烟与可观测性
-
-Phase 1.6 之后，GitHub Actions 包含独立的 `API Pilot Smoke` job。该 job 会在 CI PostgreSQL service 上执行：
-
-```bash
-pnpm --filter @easy-erp/api exec prisma generate --schema prisma/schema.prisma
-pnpm --filter @easy-erp/api exec prisma migrate deploy --schema prisma/schema.prisma
-pnpm --filter @easy-erp/api seed:demo
-pnpm --filter @easy-erp/api smoke:pilot
-```
-
-该门禁覆盖空库迁移、demo 初始化、API health、管理员登录、员工登录、打卡、请假、补卡、审批、月报锁定和导出任务查询。
-
-API 已启用基础 request observability：
-
-- 请求缺少 `X-Request-Id` 时，服务端生成 request id。
-- 请求携带 `X-Request-Id` 时，服务端透传该值。
-- 响应 header 返回 `X-Request-Id`。
-- 访问日志记录 method、path、status、durationMs、tenantId、userId 和 employeeId。
-- 访问日志不记录请求体、Authorization token、密码、query string、完整定位轨迹或照片 URL。
-
-## 6. 管理后台与小程序
+## 5. 管理后台与小程序
 
 启动管理后台：
 
@@ -145,7 +124,7 @@ Phase 1.7 后，管理后台采用 Tailwind-first 数据驾驶舱视觉。试点
 pnpm --filter @easy-erp/miniapp dev:weapp
 ```
 
-如果需要连接试点 API，先明确注入后端地址：
+小程序产物输出到 `apps/miniapp/dist/`，可用微信开发者工具打开。
 
 ```bash
 TARO_APP_API_BASE_URL="http://<pilot-api-host>:3000" pnpm --filter @easy-erp/miniapp dev:weapp
@@ -169,14 +148,14 @@ Phase 1.7 后，小程序采用 `weapp-tailwindcss` + 自有 Taro 组件。小�
 - 登录、打卡、考勤记录、请假、补卡和个人页的 PageShell、Card、Field、PrimaryButton、StatusText 与状态 badge 视觉一致。
 
 ## 7. 回滚边界
+## 6. 回滚边界
 
 - Prisma 生产迁移不做自动下滚。上线前必须先在 staging 或临时空库执行 `migrate deploy`。
 - 本阶段新增表和新增 demo 数据是向前兼容改动；应用回滚通常可先回滚代码版本，数据库保留新增表。
 - 若 seed 写入了错误 demo 数据，优先修正 seed 后重复执行；不要在生产环境直接复用 demo seed。
 - 涉及真实生产数据的删除、字段重命名和约束收紧必须单独拆任务评估。
-- 若 request id 或访问日志影响试点运行，优先回滚 API 应用版本；不要直接删除日志字段或改动数据库。
 
-## 8. 常见故障
+## 7. 常见故障
 
 ### 数据库连接失败
 
@@ -206,7 +185,3 @@ pnpm --filter @easy-erp/api exec prisma migrate status --schema prisma/schema.pr
 ### 月报无数据
 
 确认查询参数使用 demo 工厂 ID `22222222-2222-4222-8222-222222222222` 和月份 `2026-05`。Demo seed 只内置 2026-05-18 的一条考勤结果。
-
-### 请求排障缺少上下文
-
-优先从响应 header 中复制 `X-Request-Id`，再用该 request id 检索 API 访问日志。日志中应包含 method、path、status、durationMs、tenantId、userId 和 employeeId，便于定位权限、数据范围或接口失败原因。
