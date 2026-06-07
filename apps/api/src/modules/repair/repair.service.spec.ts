@@ -1,16 +1,14 @@
-import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ApprovalStatus } from '@prisma/client';
 import { describe, expect, it } from 'vitest';
 import type { AuthPrincipal } from '../../core/auth';
 import { PermissionService } from '../../core/permission';
 import type { EmployeeRecord, EmployeeRepository } from '../employee';
-import type { ApprovalListItem, PaginatedResult } from '../approval-view.types';
 import { RepairService } from './repair.service';
 import type {
   CreateRepairRequestInput,
   ManualCheckinInput,
   RepairApprovalResult,
-  RepairRequestListQuery,
   RepairRequestRecord,
   RepairRequestRepository,
 } from './repair.repository';
@@ -110,38 +108,6 @@ describe('RepairService', () => {
     expect(repository.manualCheckins).toEqual([]);
     expect(recalculation.calls).toEqual([]);
   });
-
-  it('lists repair approvals inside current employee data scope', async () => {
-    const repository = new FakeRepairRequestRepository([
-      repairRequest({ id: 'repair-1', employeeId: 'employee-1', status: ApprovalStatus.PENDING }),
-      repairRequest({ id: 'repair-2', employeeId: 'other-employee', status: ApprovalStatus.PENDING }),
-      repairRequest({ id: 'repair-3', employeeId: 'employee-1', status: ApprovalStatus.APPROVED }),
-    ]);
-    const service = createService(repository);
-
-    const page = await service.list(principal(), {
-      factoryId: 'factory-1',
-      status: 'PENDING',
-      page: 1,
-      pageSize: 20,
-    });
-
-    expect(page.items.map((item) => item.id)).toEqual(['repair-1']);
-    expect(repository.lastListQuery).toMatchObject({
-      employeeId: 'employee-1',
-      status: ApprovalStatus.PENDING,
-    });
-  });
-
-  it('rejects repair approval list without factory scope', async () => {
-    const service = createService(new FakeRepairRequestRepository());
-
-    await expect(
-      service.list(principal(), {
-        factoryId: '',
-      }),
-    ).rejects.toBeInstanceOf(BadRequestException);
-  });
 });
 
 function createService(
@@ -158,7 +124,6 @@ function createService(
 
 class FakeRepairRequestRepository implements RepairRequestRepository {
   readonly manualCheckins: ManualCheckinInput[] = [];
-  lastListQuery: RepairRequestListQuery | null = null;
   private readonly records = new Map<string, RepairRequestRecord>();
 
   constructor(records: RepairRequestRecord[] = []) {
@@ -183,43 +148,6 @@ class FakeRepairRequestRepository implements RepairRequestRepository {
   ): Promise<RepairRequestRecord | null> {
     const record = this.records.get(id);
     return record?.tenantId === tenantId ? record : null;
-  }
-
-  async list(
-    tenantId: string,
-    query: RepairRequestListQuery,
-  ): Promise<PaginatedResult<ApprovalListItem>> {
-    this.lastListQuery = query;
-    const items = [...this.records.values()]
-      .filter((record) => record.tenantId === tenantId)
-      .filter((record) => record.factoryId === query.factoryId)
-      .filter((record) => !query.employeeId || record.employeeId === query.employeeId)
-      .filter((record) => !query.status || record.status === query.status)
-      .map((record) => ({
-        id: record.id,
-        type: 'REPAIR' as const,
-        employeeId: record.employeeId,
-        employeeName: record.employeeId === 'employee-1' ? '张三' : '李四',
-        empNo: record.employeeId === 'employee-1' ? 'E001' : 'E002',
-        status: record.status === ApprovalStatus.APPROVED
-          ? 'APPROVED' as const
-          : record.status === ApprovalStatus.REJECTED
-            ? 'REJECTED' as const
-            : 'PENDING' as const,
-        reason: record.reason,
-        createdAt: record.createdAt.toISOString(),
-        targetDate: record.targetDate.toISOString().slice(0, 10),
-        repairAt: record.repairAt.toISOString(),
-        requestType: record.repairType,
-      }));
-
-    return {
-      items,
-      total: items.length,
-      page: query.page,
-      pageSize: query.pageSize,
-      totalPages: Math.ceil(items.length / query.pageSize),
-    };
   }
 
   async approveWithManualCheckin(input: {

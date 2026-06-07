@@ -16,9 +16,7 @@ import type {
 import { createAdminDashboardPage } from '../pages';
 import { requestData, type AdminDashboardScope } from '../pages/common';
 import type { FetchApiClient } from '../api/client';
-import { Badge } from './shadcn/badge';
-import { Button } from './shadcn/button';
-import { ActionPanel, CrudSection, DataTable, FormInput, InlineForm } from './ui';
+import { CrudSection, DataTable, InlineForm } from './ui';
 
 export function OrganizationSection(props: {
   client: FetchApiClient;
@@ -44,9 +42,9 @@ export function OrganizationSection(props: {
   }
 
   return (
-    <CrudSection title="组织单元" description="维护工厂下的弹性组织结构。" canManage={props.canManage}>
+    <CrudSection title="组织单元" canManage={props.canManage}>
       <InlineForm disabled={!props.canManage} onSubmit={createOrgUnit}>
-        <FormInput value={name} placeholder="新组织名称" onChange={(event) => setName(event.target.value)} />
+        <input value={name} placeholder="新组织名称" onChange={(event) => setName(event.target.value)} />
       </InlineForm>
       <DataTable
         emptyText="暂无组织单元。小微企业可以只保留工厂，不强制维护多级组织。"
@@ -54,7 +52,7 @@ export function OrganizationSection(props: {
         columns={[
           ['名称', (row) => row.name],
           ['类型', (row) => row.type],
-          ['状态', (row) => <StatusBadge value={row.status} />],
+          ['状态', (row) => row.status],
         ]}
       />
     </CrudSection>
@@ -87,11 +85,11 @@ export function EmployeesSection(props: {
   }
 
   return (
-    <CrudSection title="员工档案" description="查看和创建试点员工档案。" canManage={props.canManage}>
+    <CrudSection title="员工档案" canManage={props.canManage}>
       <InlineForm disabled={!props.canManage} onSubmit={createEmployee}>
-        <FormInput value={form.empNo} placeholder="工号" onChange={(event) => setForm({ ...form, empNo: event.target.value })} />
-        <FormInput value={form.name} placeholder="姓名" onChange={(event) => setForm({ ...form, name: event.target.value })} />
-        <FormInput value={form.phone} placeholder="手机号" onChange={(event) => setForm({ ...form, phone: event.target.value })} />
+        <input value={form.empNo} placeholder="工号" onChange={(event) => setForm({ ...form, empNo: event.target.value })} />
+        <input value={form.name} placeholder="姓名" onChange={(event) => setForm({ ...form, name: event.target.value })} />
+        <input value={form.phone} placeholder="手机号" onChange={(event) => setForm({ ...form, phone: event.target.value })} />
       </InlineForm>
       <DataTable
         emptyText="暂无员工。"
@@ -100,7 +98,7 @@ export function EmployeesSection(props: {
           ['工号', (row) => row.empNo],
           ['姓名', (row) => row.name],
           ['手机号', (row) => row.phone],
-          ['状态', (row) => <StatusBadge value={row.status} />],
+          ['状态', (row) => row.status],
         ]}
       />
     </CrudSection>
@@ -138,9 +136,9 @@ export function ShiftsSection(props: {
   }
 
   return (
-    <CrudSection title="班次规则" description="维护固定班次和考勤计算基础。" canManage={props.canManage}>
+    <CrudSection title="班次规则" canManage={props.canManage}>
       <InlineForm disabled={!props.canManage} onSubmit={createShift}>
-        <FormInput value={name} placeholder="班次名称" onChange={(event) => setName(event.target.value)} />
+        <input value={name} placeholder="班次名称" onChange={(event) => setName(event.target.value)} />
       </InlineForm>
       <DataTable
         emptyText="暂无班次。"
@@ -193,9 +191,9 @@ export function AttendanceGroupsSection(props: {
   }
 
   return (
-    <CrudSection title="考勤组" description="关联员工打卡规则、班次与外勤策略。" canManage={props.canManage}>
+    <CrudSection title="考勤组" canManage={props.canManage}>
       <InlineForm disabled={!props.canManage} onSubmit={createGroup}>
-        <FormInput value={name} placeholder="考勤组名称" onChange={(event) => setName(event.target.value)} />
+        <input value={name} placeholder="考勤组名称" onChange={(event) => setName(event.target.value)} />
       </InlineForm>
       <DataTable
         emptyText="暂无考勤组。"
@@ -203,8 +201,8 @@ export function AttendanceGroupsSection(props: {
         columns={[
           ['名称', (row) => row.name],
           ['打卡方式', (row) => row.checkinMethods.join(', ')],
-          ['允许外勤', (row) => <BooleanBadge value={row.allowOutsideCheckin} trueText="是" falseText="否" />],
-          ['拍照', (row) => <BooleanBadge value={row.requirePhoto} trueText="必填" falseText="不强制" />],
+          ['允许外勤', (row) => (row.allowOutsideCheckin ? '是' : '否')],
+          ['拍照', (row) => (row.requirePhoto ? '必填' : '不强制')],
         ]}
       />
     </CrudSection>
@@ -213,17 +211,17 @@ export function AttendanceGroupsSection(props: {
 
 export function AttendanceResultsSection(props: { data: PaginatedData<AttendanceResultRow> }) {
   return (
-    <CrudSection title="考勤结果" description="按日期查看员工主状态、上下班时间和锁定状态。" canManage={false}>
+    <CrudSection title="考勤结果" canManage={false}>
       <DataTable
         emptyText="暂无考勤结果。"
         rows={props.data.items}
         columns={[
           ['日期', (row) => row.date],
           ['员工', (row) => `${row.employeeName} (${row.empNo})`],
-          ['状态', (row) => <AttendanceStatusBadge value={row.primaryStatus} />],
+          ['状态', (row) => row.primaryStatus],
           ['上班', (row) => row.clockInAt ?? '-'],
           ['下班', (row) => row.clockOutAt ?? '-'],
-          ['锁定', (row) => <BooleanBadge value={row.isFinalized} trueText="是" falseText="否" locked />],
+          ['锁定', (row) => (row.isFinalized ? '是' : '否')],
         ]}
       />
     </CrudSection>
@@ -253,18 +251,16 @@ export function ApprovalsSection(props: {
   }
 
   return (
-    <CrudSection title="审批操作" description="通过审批单 ID 快速完成请假或补卡处理。" canManage={props.canManage}>
-      <ActionPanel>
-        <FormInput value={approvalId} placeholder="审批单 ID" onChange={(event) => setApprovalId(event.target.value)} />
-        <FormInput value={comment} placeholder="审批意见" onChange={(event) => setComment(event.target.value)} />
-        <Button disabled={!props.canManage} onClick={() => approve('leave')}>通过请假</Button>
-        <Button variant="outline" disabled={!props.canManage} onClick={() => reject('leave')}>驳回请假</Button>
-        <Button disabled={!props.canManage} onClick={() => approve('repair')}>通过补卡</Button>
-        <Button variant="outline" disabled={!props.canManage} onClick={() => reject('repair')}>驳回补卡</Button>
-      </ActionPanel>
-      <p className="rounded-2xl border border-warning/20 bg-warning/10 px-4 py-3 text-sm text-warning">
-        当前后端 Phase 1 只提供审批动作接口，列表展示后续可随审批查询接口补齐。
-      </p>
+    <CrudSection title="审批操作" canManage={props.canManage}>
+      <div className="approvalBox">
+        <input value={approvalId} placeholder="审批单 ID" onChange={(event) => setApprovalId(event.target.value)} />
+        <input value={comment} placeholder="审批意见" onChange={(event) => setComment(event.target.value)} />
+        <button disabled={!props.canManage} onClick={() => approve('leave')}>通过请假</button>
+        <button disabled={!props.canManage} onClick={() => reject('leave')}>驳回请假</button>
+        <button disabled={!props.canManage} onClick={() => approve('repair')}>通过补卡</button>
+        <button disabled={!props.canManage} onClick={() => reject('repair')}>驳回补卡</button>
+      </div>
+      <p className="hint">当前后端 Phase 1 只提供审批动作接口，列表展示后续可随审批查询接口补齐。</p>
     </CrudSection>
   );
 }
@@ -289,12 +285,12 @@ export function MonthlyReportSection(props: {
   }
 
   return (
-    <CrudSection title="月报与导出" description="查看月度汇总并跟踪导出任务状态。" canManage={props.canManage}>
-      <ActionPanel className="lg:grid-cols-3">
-        <Button disabled={!props.canManage} onClick={exportReport}>创建导出任务</Button>
-        <FormInput value={props.taskId} placeholder="导出任务 ID" onChange={(event) => props.setTaskId(event.target.value)} />
-        <Button variant="outline" onClick={queryTask}>查询任务</Button>
-      </ActionPanel>
+    <CrudSection title="月报与导出" canManage={props.canManage}>
+      <div className="approvalBox">
+        <button disabled={!props.canManage} onClick={exportReport}>创建导出任务</button>
+        <input value={props.taskId} placeholder="导出任务 ID" onChange={(event) => props.setTaskId(event.target.value)} />
+        <button onClick={queryTask}>查询任务</button>
+      </div>
       <DataTable
         emptyText="暂无月报数据。"
         rows={props.data.items}
@@ -304,36 +300,9 @@ export function MonthlyReportSection(props: {
           ['迟到', (row) => row.lateCount],
           ['早退', (row) => row.earlyLeaveCount],
           ['缺勤', (row) => row.absentDays],
-          ['锁定', (row) => <BooleanBadge value={row.isFinalized} trueText="是" falseText="否" locked />],
+          ['锁定', (row) => (row.isFinalized ? '是' : '否')],
         ]}
       />
     </CrudSection>
   );
-}
-
-function StatusBadge(props: { value: string }) {
-  return <Badge variant={props.value === 'ACTIVE' ? 'success' : 'locked'}>{props.value}</Badge>;
-}
-
-function AttendanceStatusBadge(props: { value: string }) {
-  const variant = props.value === 'NORMAL'
-    ? 'success'
-    : props.value === 'ABSENT'
-      ? 'destructive'
-      : 'warning';
-
-  return <Badge variant={variant}>{props.value}</Badge>;
-}
-
-function BooleanBadge(props: {
-  value: boolean;
-  trueText: string;
-  falseText: string;
-  locked?: boolean;
-}) {
-  if (props.value) {
-    return <Badge variant={props.locked ? 'locked' : 'success'}>{props.trueText}</Badge>;
-  }
-
-  return <Badge variant="secondary">{props.falseText}</Badge>;
 }

@@ -80,14 +80,6 @@ export interface CurrentUser {
   roles: Role[];
 }
 
-export interface FactoryProfile {
-  id: string;
-  name: string;
-  address: string | null;
-  timezone: string;
-  status: Exclude<EntityStatus, 'RESIGNED'>;
-}
-
 export interface OrgUnit {
   id: string;
   factoryId: string;
@@ -125,11 +117,6 @@ export interface EmployeeProfile {
   phone: string;
   entryDate: string;
   status: EntityStatus;
-}
-
-export interface EmployeeProfileSummary {
-  user: CurrentUser;
-  employee: EmployeeProfile | null;
 }
 
 export interface EmployeeQuery {
@@ -272,7 +259,6 @@ export interface RecalculateAttendanceRequest {
 }
 
 export interface LeaveRequestCreateRequest {
-  factoryId: string;
   leaveType: LeaveType;
   startAt: string;
   endAt: string;
@@ -291,7 +277,6 @@ export interface LeaveRequestDraft {
 }
 
 export interface RepairRequestCreateRequest {
-  factoryId: string;
   targetDate: string;
   repairType: RepairType;
   repairAt: string;
@@ -315,30 +300,13 @@ export interface RejectActionRequest {
   rejectReason: string;
 }
 
-export type ApprovalKind = 'LEAVE' | 'REPAIR';
-
-export interface ApprovalQuery {
-  factoryId: string;
-  orgUnitId?: string | null;
-  status?: ApprovalStatus;
-  page?: number;
-  pageSize?: number;
-}
-
 export interface ApprovalItem {
   id: string;
-  type: ApprovalKind;
   employeeId: string;
   employeeName: string;
-  empNo: string;
   status: ApprovalStatus;
   reason: string;
   createdAt: string;
-  startAt?: string;
-  endAt?: string;
-  targetDate?: string;
-  repairAt?: string;
-  requestType?: LeaveType | RepairType;
 }
 
 export interface MonthlyReportQuery {

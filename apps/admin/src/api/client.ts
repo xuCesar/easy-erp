@@ -68,15 +68,15 @@ export class FetchApiClient implements ApiClient {
         headers,
         body: body === undefined ? undefined : JSON.stringify(body),
       });
-      const payload = (await response.json().catch(() => null)) as ApiResponse<TData> | unknown | null;
+      const payload = (await response.json().catch(() => null)) as ApiResponse<TData> | null;
 
       if (payload && typeof payload === 'object' && 'code' in payload) {
-        return payload as ApiResponse<TData>;
+        return payload;
       }
 
       return {
         code: response.ok ? 0 : response.status,
-        message: response.ok ? 'success' : toHttpErrorMessage(response.status, path, payload),
+        message: response.ok ? 'success' : `HTTP ${response.status}`,
         data: (response.ok ? payload : null) as TData,
         requestId: createRequestId(),
       } as ApiResponse<TData>;
@@ -116,45 +116,4 @@ export function clearSession(): void {
 
 function createRequestId(): string {
   return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
-}
-
-function toHttpErrorMessage(status: number, path: string, payload: unknown): string {
-  if (path.endsWith('/auth/login')) {
-    if (status === 400) {
-      return '请输入手机号和密码。';
-    }
-
-    if (status === 401) {
-      return '手机号或密码不正确。';
-    }
-
-    if (status === 403) {
-      return '当前账号已停用，请联系管理员。';
-    }
-  }
-
-  if (status === 401) {
-    return '登录状态已失效，请重新登录。';
-  }
-
-  const serverMessage = readServerMessage(payload);
-  return serverMessage || `请求失败，状态码 ${status}。`;
-}
-
-function readServerMessage(payload: unknown): string {
-  if (!payload || typeof payload !== 'object' || !('message' in payload)) {
-    return '';
-  }
-
-  const message = (payload as { message: unknown }).message;
-
-  if (typeof message === 'string') {
-    return message;
-  }
-
-  if (Array.isArray(message) && message.every((item) => typeof item === 'string')) {
-    return message.join('；');
-  }
-
-  return '';
 }
