@@ -1,5 +1,10 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ApprovalStatus, LeaveType, Prisma, PrismaClient } from '@prisma/client';
+import {
+  toPublicApprovalStatus,
+  type ApprovalListItem,
+  type PaginatedResult,
+} from '../approval-view.types';
 
 export type LeaveRequestRecord = {
   id: string;
@@ -42,9 +47,22 @@ export type UpdateLeaveStatusInput = {
   cancelReason?: string | null;
 };
 
+export type LeaveRequestListQuery = {
+  factoryId: string;
+  orgUnitId?: string | null;
+  employeeId?: string | null;
+  status?: ApprovalStatus;
+  page: number;
+  pageSize: number;
+};
+
 export interface LeaveRequestRepository {
   create(input: CreateLeaveRequestInput): Promise<LeaveRequestRecord>;
   findById(tenantId: string, id: string): Promise<LeaveRequestRecord | null>;
+  list(
+    tenantId: string,
+    query: LeaveRequestListQuery,
+  ): Promise<PaginatedResult<ApprovalListItem>>;
   updateStatus(
     tenantId: string,
     id: string,
@@ -98,6 +116,62 @@ export class PrismaLeaveRequestRepository
     });
 
     return record ? toLeaveRequestRecord(record) : null;
+  }
+
+  async list(
+    tenantId: string,
+    query: LeaveRequestListQuery,
+  ): Promise<PaginatedResult<ApprovalListItem>> {
+    const where = {
+      tenantId,
+      factoryId: query.factoryId,
+      deletedAt: null,
+      ...(query.status ? { status: query.status } : {}),
+      ...(query.employeeId ? { employeeId: query.employeeId } : {}),
+      ...(query.orgUnitId
+        ? {
+            employee: {
+              orgUnitId: query.orgUnitId,
+            },
+          }
+        : {}),
+    };
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.leaveRequest.findMany({
+        where,
+        include: {
+          employee: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip: (query.page - 1) * query.pageSize,
+        take: query.pageSize,
+      }),
+      this.prisma.leaveRequest.count({
+        where,
+      }),
+    ]);
+
+    return {
+      items: items.map((item) => ({
+        id: item.id,
+        type: 'LEAVE',
+        employeeId: item.employeeId,
+        employeeName: item.employee.name,
+        empNo: item.employee.empNo,
+        status: toPublicApprovalStatus(item.status),
+        reason: item.reason,
+        createdAt: item.createdAt.toISOString(),
+        startAt: item.startAt.toISOString(),
+        endAt: item.endAt.toISOString(),
+        requestType: item.leaveType,
+      })),
+      total,
+      page: query.page,
+      pageSize: query.pageSize,
+      totalPages: Math.ceil(total / query.pageSize),
+    };
   }
 
   async updateStatus(
