@@ -7,12 +7,21 @@ import { ProfileModule } from './profile.module';
 
 describe('ProfileController', () => {
   it('wires module dependencies for auth and permission guards', async () => {
+    const previousAccessSecret = process.env.JWT_ACCESS_SECRET;
+    const previousRefreshSecret = process.env.JWT_REFRESH_SECRET;
+    process.env.JWT_ACCESS_SECRET = 'test-access-secret';
+    process.env.JWT_REFRESH_SECRET = 'test-refresh-secret';
     const moduleRef = await Test.createTestingModule({
       imports: [ProfileModule],
     }).compile();
 
-    expect(moduleRef.get(ProfileController)).toBeInstanceOf(ProfileController);
-    await moduleRef.close();
+    try {
+      expect(moduleRef.get(ProfileController)).toBeInstanceOf(ProfileController);
+    } finally {
+      await moduleRef.close();
+      restoreEnv('JWT_ACCESS_SECRET', previousAccessSecret);
+      restoreEnv('JWT_REFRESH_SECRET', previousRefreshSecret);
+    }
   });
 
   it('returns current user with linked employee profile', async () => {
@@ -77,4 +86,16 @@ function employeeRecord(): EmployeeRecord {
     updatedAt: new Date('2026-05-01T00:00:00.000Z'),
     deletedAt: null,
   };
+}
+
+function restoreEnv(
+  name: 'JWT_ACCESS_SECRET' | 'JWT_REFRESH_SECRET',
+  value: string | undefined,
+): void {
+  if (value === undefined) {
+    delete process.env[name];
+    return;
+  }
+
+  process.env[name] = value;
 }

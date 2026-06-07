@@ -258,7 +258,7 @@ async function main(): Promise<void> {
 
   await step('admin can query abnormal attendance results', async () => {
     const page = await get<PaginatedData<{ id: string; primaryStatus: string }>>(
-      `/attendance/results?factoryId=${demo.factoryId}&startDate=2026-05-01&endDate=2026-05-31&primaryStatus=ABNORMAL`,
+      `/attendance/results?factoryId=${demo.factoryId}&startDate=2026-05-01&endDate=2026-05-31&primaryStatus=ABSENT`,
       admin.accessToken,
     );
     assert(Array.isArray(page.items), 'abnormal result query should return page items');
