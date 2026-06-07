@@ -4,7 +4,13 @@ import { MetricStat, MiniCard, MiniHeader, MiniPage, MiniSectionTitle } from '..
 import { useAuthGuard } from '../../hooks/useAuthGuard';
 
 const days = ['-', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31', '-', '-', '-'];
-const bars = [5, 7, 10, 8, 11, 12, 9, 10, 4, 12, 6, 9, 11, 5, 7, 10];
+const trendBars = [
+  { label: '5.1', value: 5 },
+  { label: '5.8', value: 10 },
+  { label: '5.15', value: 4 },
+  { label: '5.22', value: 11 },
+  { label: '5.29', value: 10 },
+] as const;
 
 export default function StatisticsPage() {
   useAuthGuard();
@@ -14,10 +20,10 @@ export default function StatisticsPage() {
     <MiniPage>
       <MiniHeader title="考勤统计" back />
 
-      <View className="mb-[28px] flex items-center justify-center gap-[54px]">
-        <ChevronLeft color="#667085" size={32} strokeWidth={1.9} />
-        <Text className="text-[34px] font-extrabold text-[#07112f]">{currentMonthText}</Text>
-        <ChevronRight color="#667085" size={32} strokeWidth={1.9} />
+      <View className="mb-[28px] flex items-center justify-center gap-[46px]">
+        <ChevronLeft color="#667085" size={28} strokeWidth={1.9} />
+        <Text className="text-[32px] font-bold text-[#07112f]">{currentMonthText}</Text>
+        <ChevronRight color="#667085" size={28} strokeWidth={1.9} />
       </View>
 
       <View className="mb-[30px]">
@@ -50,19 +56,19 @@ export default function StatisticsPage() {
 
       <MiniCard>
         <MiniSectionTitle title="考勤趋势" />
-        <View className="mt-[18px] h-[260px] flex-row items-end gap-[16px] border-b border-[#edf0f7] px-[10px]">
-          {bars.map((bar, index) => (
-            <View key={`${bar}-${index}`} className="flex-1 items-center justify-end">
+        <View className="mt-[18px] grid h-[260px] grid-cols-5 items-end border-b border-[#edf0f7] px-[14px] pb-[8px]">
+          {trendBars.map((bar) => (
+            <View key={bar.label} className="flex h-full items-end justify-center">
               <View
-                className="w-[12px] rounded-full bg-[#5b55ff] shadow-[0_10px_22px_rgba(91,85,255,0.24)]"
-                style={{ height: `${bar * 14}px` }}
+                className="w-[12px] rounded-full bg-[#5b55ff] shadow-[0_8px_18px_rgba(91,85,255,0.22)]"
+                style={{ height: `${Math.min(178, Math.max(28, bar.value * 13))}px` }}
               />
             </View>
           ))}
         </View>
-        <View className="mt-[18px] flex-row justify-between px-[18px]">
-          {['5.1', '5.8', '5.15', '5.22', '5.29'].map((label) => (
-            <Text key={label} className="text-[24px] text-[#667085]">{label}</Text>
+        <View className="mt-[18px] grid grid-cols-5 px-[6px]">
+          {trendBars.map((bar) => (
+            <Text key={bar.label} className="block text-center text-[24px] text-[#667085]">{bar.label}</Text>
           ))}
         </View>
       </MiniCard>

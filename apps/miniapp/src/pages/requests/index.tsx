@@ -96,11 +96,16 @@ export default function RequestsPage() {
 
 function SegmentButton(props: { label: string; active: boolean; onClick: () => void }) {
   return (
-    <View className="relative flex-1 items-center pb-[20px]" onClick={props.onClick}>
+    <View className="relative flex-1 pb-[20px]" onClick={props.onClick}>
       <Text className={`block text-center text-[30px] font-extrabold ${props.active ? 'text-[#4f46f5]' : 'text-[#667085]'}`}>
         {props.label}
       </Text>
-      {props.active ? <View className="absolute bottom-[-2px] left-1/2 h-[6px] w-[90px] -translate-x-1/2 rounded-full bg-[#5b55ff]" /> : null}
+      {props.active ? (
+        <View
+          className="absolute bottom-[-2px] h-[6px] w-[90px] rounded-full bg-[#5b55ff]"
+          style={{ left: 'calc(50% - 45px)' }}
+        />
+      ) : null}
     </View>
   );
 }
